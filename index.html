@@ -1,0 +1,1877 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>财经日报 · 阅读器</title>
+<style>
+  :root {
+    --bg: #fdfaf5;
+    --card: #fffef9;
+    --text: #2c2416;
+    --text-muted: #8b7e6a;
+    --border: #e8e0d0;
+    --accent: #c75b2a;
+    --accent-soft: #fdf0e6;
+    --tag-bg: #f5efe4;
+    --tag-text: #6b5e46;
+    --sidebar-bg: #f8f3ea;
+  --note-hl: #cfe8ff;
+  --note-hl-active: #ffd6a5;
+  --note-panel-w: 300px;
+    --sidebar-hover: #efe6d7;
+    --shadow: 0 1px 3px rgba(44,36,22,0.06);
+    --shadow-lg: 0 4px 16px rgba(44,36,22,0.08);
+  }
+  .dark {
+    --bg: #1a1814;
+    --card: #24211b;
+    --text: #e0d8c8;
+    --text-muted: #9b8e78;
+    --border: #3a3428;
+    --accent: #e8814a;
+    --accent-soft: #2a2018;
+    --tag-bg: #2e2920;
+    --tag-text: #b8a88c;
+    --sidebar-bg: #1f1c16;
+  --note-hl: #1e3a52;
+  --note-hl-active: #5a3a1a;
+    --sidebar-hover: #2e2820;
+    --shadow: 0 1px 3px rgba(0,0,0,0.2);
+    --shadow-lg: 0 4px 16px rgba(0,0,0,0.3);
+  }
+
+  * { margin:0; padding:0; box-sizing:border-box; }
+
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "PingFang SC", "Microsoft YaHei", sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    display: flex;
+    min-height: 100vh;
+    line-height: 1.6;
+  }
+
+  /* ===== 侧边栏 ===== */
+  .sidebar {
+    width: 260px;
+    min-width: 260px;
+    background: var(--sidebar-bg);
+    border-right: 1px solid var(--border);
+    display: flex;
+    flex-direction: column;
+    position: sticky;
+    top: 0;
+    height: 100vh;
+    overflow: hidden;
+    z-index: 10;
+  }
+  .sidebar-header {
+    padding: 20px 20px 12px;
+    border-bottom: 1px solid var(--border);
+  }
+  .sidebar-header h1 {
+    font-size: 1.1rem;
+    font-weight: 700;
+    color: var(--accent);
+    letter-spacing: 0.02em;
+  }
+  .sidebar-header .subtitle {
+    font-size: 0.72rem;
+    color: var(--text-muted);
+    margin-top: 2px;
+  }
+  .search-wrap {
+    padding: 12px 16px;
+    border-bottom: 1px solid var(--border);
+  }
+  .search-input {
+    width: 100%;
+    padding: 8px 12px 8px 32px;
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    font-size: 0.85rem;
+    background: var(--card);
+    color: var(--text);
+    outline: none;
+    transition: border-color 0.2s;
+  }
+  .search-input:focus { border-color: var(--accent); }
+  .search-icon {
+    position: absolute;
+    margin: 10px 0 0 10px;
+    color: var(--text-muted);
+    font-size: 0.8rem;
+    pointer-events: none;
+  }
+  .date-list {
+    flex: 1;
+    overflow-y: auto;
+    padding: 8px 0;
+    scroll-behavior: smooth;
+  }
+  .date-group {
+    margin-bottom: 4px;
+  }
+  .date-group-label {
+    font-size: 0.7rem;
+    font-weight: 600;
+    color: var(--text-muted);
+    padding: 8px 20px 4px;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+  }
+  .date-item {
+    display: block;
+    width: 100%;
+    text-align: left;
+    padding: 7px 20px;
+    border: none;
+    background: transparent;
+    color: var(--text);
+    font-size: 0.88rem;
+    cursor: pointer;
+    transition: background 0.15s;
+    border-left: 3px solid transparent;
+    font-family: inherit;
+  }
+  .date-item:hover { background: var(--sidebar-hover); }
+  .date-item.active {
+    background: var(--accent-soft);
+    border-left-color: var(--accent);
+    font-weight: 600;
+    color: var(--accent);
+  }
+  .date-item .dot {
+    display: inline-block;
+    width: 6px; height: 6px;
+    border-radius: 50%;
+    background: var(--accent);
+    margin-right: 6px;
+    vertical-align: middle;
+    opacity: 0.6;
+  }
+  .sidebar-footer {
+    padding: 12px 20px;
+    border-top: 1px solid var(--border);
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    font-size: 0.75rem;
+    color: var(--text-muted);
+  }
+  .sidebar-footer button {
+    background: none;
+    border: 1px solid var(--border);
+    border-radius: 4px;
+    padding: 4px 10px;
+    font-size: 0.75rem;
+    cursor: pointer;
+    color: var(--text-muted);
+    transition: all 0.2s;
+  }
+  .sidebar-footer button:hover { color: var(--text); border-color: var(--text-muted); }
+
+  /* ===== 主内容区 ===== */
+  .main {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    min-width: 0;
+  }
+
+  /* 顶部横条 */
+  .topbar {
+    padding: 16px 32px;
+    border-bottom: 1px solid var(--border);
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    background: var(--bg);
+    position: sticky;
+    top: 0;
+    z-index: 5;
+  }
+  .topbar .current-date {
+    font-size: 0.95rem;
+    font-weight: 600;
+  }
+  .topbar .stats {
+    font-size: 0.78rem;
+    color: var(--text-muted);
+  }
+  .topbar-right {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+  }
+
+  /* 内容容器 */
+  .content {
+    max-width: 780px;
+    width: 100%;
+    margin: 0 auto;
+    padding: 32px 32px 64px;
+    flex: 1;
+  }
+  .empty-state {
+    text-align: center;
+    padding: 80px 32px;
+    color: var(--text-muted);
+  }
+  .empty-state .icon { font-size: 3rem; margin-bottom: 16px; }
+  .empty-state h2 { font-size: 1.3rem; margin-bottom: 8px; color: var(--text); }
+  .empty-state p { font-size: 0.9rem; line-height: 1.7; }
+
+  /* MD 渲染后的样式 */
+  .article { font-family: "PingFang SC", "Noto Serif SC", "Source Han Serif SC", Georgia, "Times New Roman", serif; }
+  .article h1 { font-size: 1.7rem; font-weight: 800; margin: 8px 0 24px; letter-spacing: 0.02em; }
+  .article h2 {
+    font-size: 1.2rem; font-weight: 700; margin: 40px 0 16px; padding-bottom: 8px;
+    border-bottom: 2px solid var(--accent); display: flex; align-items: center; gap: 8px;
+  }
+  .article h3 { font-size: 1.05rem; font-weight: 700; margin: 28px 0 10px; }
+  .article h4 { font-size: 0.95rem; font-weight: 600; margin: 20px 0 8px; color: var(--text-muted); }
+  .article p { margin: 12px 0; font-size: 0.98rem; line-height: 1.85; }
+  .article blockquote {
+    margin: 16px 0; padding: 14px 18px;
+    border-left: 3px solid var(--accent);
+    background: var(--accent-soft);
+    border-radius: 0 6px 6px 0;
+    font-size: 0.9rem; color: var(--text-muted);
+  }
+  .article blockquote p { margin: 4px 0; }
+  .article strong { color: var(--accent); font-weight: 700; }
+  .article hr { border: none; border-top: 1px solid var(--border); margin: 32px 0; }
+
+  /* 表格 */
+  .article .table-wrap {
+    overflow-x: auto; margin: 16px 0;
+    border: 1px solid var(--border); border-radius: 8px;
+  }
+  .article table {
+    width: 100%; border-collapse: collapse;
+    font-size: 0.85rem; font-family: -apple-system, BlinkMacSystemFont, "PingFang SC", sans-serif;
+  }
+  .article th {
+    background: var(--sidebar-bg); font-weight: 600;
+    padding: 10px 14px; text-align: left; border-bottom: 2px solid var(--border);
+    white-space: nowrap;
+  }
+  .article td {
+    padding: 9px 14px; border-bottom: 1px solid var(--border);
+    vertical-align: top;
+  }
+  .article tr:last-child td { border-bottom: none; }
+  .article tr:hover td { background: var(--sidebar-hover); }
+
+  /* 列表 */
+  .article ul, .article ol { margin: 10px 0; padding-left: 22px; }
+  .article li { margin: 6px 0; font-size: 0.93rem; line-height: 1.7; }
+
+  /* 链接 */
+  .article a { color: var(--accent); text-decoration: none; border-bottom: 1px dotted var(--accent); }
+  .article a:hover { border-bottom-style: solid; }
+
+  /* 内联代码 */
+  .article code {
+    background: var(--tag-bg); color: var(--tag-text);
+    padding: 2px 6px; border-radius: 4px; font-size: 0.85em;
+  }
+
+  /* 新闻卡片 */
+  .news-card {
+    margin: 20px 0; padding: 20px 22px;
+    background: var(--card); border: 1px solid var(--border);
+    border-radius: 10px; box-shadow: var(--shadow);
+  }
+  .news-card h3 { margin-top: 0; }
+  .news-card .badge {
+    display: inline-block; font-size: 0.7rem; font-weight: 600;
+    padding: 3px 8px; border-radius: 4px; margin-right: 6px;
+    background: var(--accent-soft); color: var(--accent);
+    font-family: -apple-system, BlinkMacSystemFont, "PingFang SC", sans-serif;
+  }
+
+  /* 响应式 */
+  @media (max-width: 768px) {
+    .sidebar { display: none; }
+    .content { padding: 20px 16px 48px; }
+  }
+
+  /* 搜索高亮 */
+  .search-highlight { background: #ffd54f; padding: 0 2px; border-radius: 2px; }
+  .dark .search-highlight { background: #7a5a00; }
+
+  /* ===== 笔记：正文高亮 ===== */
+  /* 只改 background / box-shadow —— 不加 padding/border/font，避免正文重排 */
+  .note-hl {
+    background: var(--note-hl);
+    box-shadow: inset 0 -1px 0 rgba(0,0,0,.10);
+    cursor: pointer;
+    border-radius: 0;
+  }
+  .note-hl:hover { filter: brightness(.96); }
+  .note-hl.note-hl-flash { animation: noteFlash 1.2s ease; }
+  @keyframes noteFlash {
+    0%, 100% { background: var(--note-hl); }
+    30%, 70% { background: var(--note-hl-active); }
+  }
+  .note-dot { font-size: 0.65rem; margin-left: 4px; opacity: .75; }
+
+  /* ===== 顶栏开关 ===== */
+  .notes-toggle {
+    background: none; border: 1px solid var(--border); border-radius: 4px;
+    padding: 5px 12px; font-size: .78rem; cursor: pointer;
+    color: var(--text-muted); font-family: inherit; transition: all .2s;
+  }
+  .notes-toggle:hover { color: var(--text); border-color: var(--text-muted); }
+  .notes-toggle.active { color: var(--accent); border-color: var(--accent); background: var(--accent-soft); }
+
+  /* ===== 右侧笔记面板 ===== */
+  .notes-panel {
+    width: var(--note-panel-w); min-width: var(--note-panel-w);
+    background: var(--sidebar-bg); border-left: 1px solid var(--border);
+    display: flex; flex-direction: column;
+    position: sticky; top: 0; height: 100vh; overflow: hidden; z-index: 10;
+  }
+  body.notes-closed .notes-panel { display: none; }
+  body.notes-open .back-top { right: calc(var(--note-panel-w) + 24px); }
+
+  .notes-panel-header {
+    padding: 20px 20px 12px; border-bottom: 1px solid var(--border);
+    display: flex; align-items: baseline; justify-content: space-between; gap: 8px;
+  }
+  .notes-panel-header h2 { font-size: 1rem; font-weight: 700; color: var(--accent); }
+  .notes-panel-header .count { font-size: .72rem; color: var(--text-muted); }
+
+  .notes-search { padding: 12px 16px; border-bottom: 1px solid var(--border); }
+  .notes-search input {
+    width: 100%; padding: 7px 10px; border: 1px solid var(--border); border-radius: 6px;
+    font-size: .82rem; background: var(--card); color: var(--text); outline: none; font-family: inherit;
+  }
+  .notes-search input:focus { border-color: var(--accent); }
+
+  .notes-filters { padding: 10px 16px; display: flex; gap: 6px; border-bottom: 1px solid var(--border); }
+  .notes-filters button {
+    flex: 1; padding: 5px 0; font-size: .75rem; cursor: pointer; font-family: inherit;
+    background: var(--card); color: var(--text-muted);
+    border: 1px solid var(--border); border-radius: 5px; transition: all .15s;
+  }
+  .notes-filters button.active { background: var(--accent-soft); color: var(--accent); border-color: var(--accent); font-weight: 600; }
+
+  .notes-list { flex: 1; overflow-y: auto; padding: 10px 12px 20px; }
+  .notes-group-label {
+    font-size: .7rem; font-weight: 600; color: var(--text-muted);
+    padding: 10px 6px 5px; letter-spacing: .04em;
+  }
+  .note-item {
+    background: var(--card); border: 1px solid var(--border); border-radius: 8px;
+    padding: 10px 12px; margin-bottom: 8px; cursor: pointer; transition: border-color .15s;
+  }
+  .note-item:hover { border-color: var(--text-muted); }
+  .note-item.active { border-color: var(--accent); box-shadow: 0 0 0 2px var(--accent-soft); }
+  .note-quote {
+    font-size: .8rem; line-height: 1.55; color: var(--text);
+    border-left: 2px solid var(--note-hl); padding-left: 8px; margin-bottom: 6px;
+    display: -webkit-box; -webkit-line-clamp: 4; -webkit-box-orient: vertical; overflow: hidden;
+  }
+  .note-body { font-size: .82rem; line-height: 1.6; white-space: pre-wrap; word-break: break-word; }
+  .note-meta {
+    font-size: .68rem; color: var(--text-muted); margin-top: 7px;
+    display: flex; flex-wrap: wrap; gap: 6px; align-items: center;
+  }
+  .note-badge { font-size: .65rem; padding: 1px 6px; border-radius: 3px; background: var(--tag-bg); color: var(--tag-text); }
+  .note-badge.orphan { background: #ffe0e0; color: #a33; }
+  .dark .note-badge.orphan { background: #4a2020; color: #e88; }
+  .note-actions { margin-top: 8px; display: flex; gap: 6px; opacity: 0; transition: opacity .15s; }
+  .note-item:hover .note-actions, .note-item.active .note-actions { opacity: 1; }
+  .note-actions button {
+    background: none; border: 1px solid var(--border); border-radius: 4px;
+    padding: 2px 8px; font-size: .68rem; cursor: pointer; color: var(--text-muted); font-family: inherit;
+  }
+  .note-actions button:hover { color: var(--text); border-color: var(--text-muted); }
+  .notes-empty { text-align: center; color: var(--text-muted); font-size: .8rem; padding: 40px 16px; line-height: 1.8; }
+
+  .notes-panel-footer { padding: 10px 12px; border-top: 1px solid var(--border); display: flex; gap: 6px; }
+  .notes-panel-footer button {
+    flex: 1; background: none; border: 1px solid var(--border); border-radius: 5px;
+    padding: 5px 0; font-size: .7rem; cursor: pointer; color: var(--text-muted); font-family: inherit;
+  }
+  .notes-panel-footer button:hover { color: var(--text); border-color: var(--text-muted); }
+
+  /* ===== 划选工具条 ===== */
+  #selToolbar { position: fixed; z-index: 40; display: none; transform: translateX(-50%); }
+  .sel-toolbar-btn {
+    background: var(--text); color: var(--bg); border: none; border-radius: 6px;
+    padding: 6px 12px; font-size: .78rem; cursor: pointer; font-family: inherit;
+    box-shadow: var(--shadow-lg); white-space: nowrap;
+  }
+  .sel-toolbar-btn:hover { background: var(--accent); color: #fff; }
+
+  /* ===== 笔记编辑器 ===== */
+  #noteEditor {
+    position: fixed; z-index: 45; display: none;
+    width: 380px; max-width: calc(100vw - 32px);
+    background: var(--card); border: 1px solid var(--border);
+    border-radius: 10px; box-shadow: var(--shadow-lg); padding: 14px 16px;
+  }
+  #noteEditor.sheet {
+    left: 0; right: 0; top: auto !important; bottom: 0; width: auto; max-width: none;
+    border-radius: 12px 12px 0 0; max-height: 80vh; overflow-y: auto;
+  }
+  .note-editor-title { font-size: .8rem; font-weight: 700; margin-bottom: 10px; color: var(--accent); }
+  .note-editor-label { font-size: .7rem; color: var(--text-muted); margin: 8px 0 4px; }
+  .note-editor textarea {
+    width: 100%; border: 1px solid var(--border); border-radius: 6px; padding: 8px 10px;
+    font-size: .82rem; font-family: inherit; background: var(--bg); color: var(--text);
+    resize: vertical; outline: none; line-height: 1.6;
+  }
+  .note-editor textarea:focus { border-color: var(--accent); }
+  .anchor-status {
+    font-size: .7rem; margin-top: 6px; color: var(--text-muted);
+    display: flex; align-items: center; gap: 8px; flex-wrap: wrap;
+  }
+  .anchor-status.ok { color: #2e7d32; }
+  .dark .anchor-status.ok { color: #81c784; }
+  .anchor-status.warn { color: #b26a00; }
+  .dark .anchor-status.warn { color: #e0a44a; }
+  .anchor-status button {
+    background: none; border: 1px solid var(--border); border-radius: 4px;
+    padding: 1px 7px; font-size: .68rem; cursor: pointer; color: var(--text-muted); font-family: inherit;
+  }
+  .note-editor-actions { display: flex; gap: 8px; margin-top: 12px; align-items: center; }
+  .note-editor-actions .spacer { flex: 1; }
+  .note-editor-actions button {
+    border-radius: 6px; padding: 6px 14px; font-size: .78rem; cursor: pointer; font-family: inherit;
+    border: 1px solid var(--border); background: none; color: var(--text-muted);
+  }
+  .note-editor-actions button:hover { color: var(--text); border-color: var(--text-muted); }
+  .note-editor-actions button.primary { background: var(--accent); border-color: var(--accent); color: #fff; font-weight: 600; }
+  .note-editor-actions button.primary:hover { filter: brightness(1.08); color: #fff; }
+  .note-editor-actions button.danger:hover { color: #c0392b; border-color: #c0392b; }
+
+  /* ===== 抽屉遮罩 ===== */
+  .notes-scrim { display: none; position: fixed; inset: 0; background: rgba(0,0,0,.35); z-index: 29; }
+
+  /* ===== 笔记面板：窄屏改抽屉 ===== */
+  @media (max-width: 1024px) {
+    .notes-panel {
+      position: fixed; right: 0; top: 0; bottom: 0; height: 100%;
+      width: min(88vw, 340px); min-width: 0; z-index: 30;
+      box-shadow: var(--shadow-lg);
+    }
+    body.notes-open .notes-scrim { display: block; }
+    body.notes-open .back-top { right: 24px; }
+  }
+
+  /* 回到顶部 */
+  .back-top {
+    position: fixed; bottom: 24px; right: 24px;
+    width: 40px; height: 40px; border-radius: 50%;
+    background: var(--card); border: 1px solid var(--border);
+    box-shadow: var(--shadow-lg); cursor: pointer;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 1.2rem; color: var(--text-muted);
+    opacity: 0; transition: opacity 0.3s;
+  }
+  .back-top.visible { opacity: 1; }
+
+  /* 过渡 */
+  .fade-in { animation: fadeIn 0.3s ease; }
+  @keyframes fadeIn { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: translateY(0); } }
+</style>
+</head>
+<body>
+
+<!-- 侧边栏 -->
+<aside class="sidebar">
+  <div class="sidebar-header">
+    <h1>📰 财经日报</h1>
+    <div class="subtitle">Global Financial Daily</div>
+  </div>
+  <div class="search-wrap" style="position:relative">
+    <span class="search-icon">🔍</span>
+    <input class="search-input" id="searchInput" placeholder="搜索标题、关键词…" oninput="doSearch()">
+  </div>
+  <nav class="date-list" id="dateList"></nav>
+  <div class="sidebar-footer">
+    <span id="reportCount"></span>
+    <button onclick="toggleTheme()" title="切换暗色模式">🌓</button>
+  </div>
+</aside>
+
+<!-- 主区域 -->
+<div class="main">
+  <div class="topbar">
+    <span class="current-date" id="currentDateLabel">选择一篇日报</span>
+    <div class="topbar-right">
+      <button class="notes-toggle" id="notesToggle" onclick="toggleNotesPanel()">📝 笔记 <span id="notesCount">0</span></button>
+      <span class="stats" id="searchStats"></span>
+    </div>
+  </div>
+  <div class="content" id="contentArea">
+    <div class="empty-state">
+      <div class="icon">📋</div>
+      <h2>欢迎使用财经日报阅读器</h2>
+      <p>从左侧选择日期，浏览当天的全球财经新闻汇总。<br>支持全文搜索，按分类阅读，知识点积累。</p>
+    </div>
+  </div>
+</div>
+
+<button class="back-top" id="backTop" onclick="window.scrollTo({top:0,behavior:'smooth'})">⬆</button>
+
+<!-- ===== 右侧笔记面板 ===== -->
+<aside class="notes-panel" id="notesPanel">
+  <div class="notes-panel-header">
+    <h2>📝 我的笔记</h2>
+    <span class="count" id="notesPanelCount"></span>
+  </div>
+  <div class="notes-search">
+    <input id="notesSearchInput" placeholder="搜索笔记…" oninput="onNotesSearchInput()">
+  </div>
+  <div class="notes-filters">
+    <button id="notesFilterCurrent" onclick="setNotesFilter('current')">本篇</button>
+    <button id="notesFilterAll" onclick="setNotesFilter('all')">全部</button>
+  </div>
+  <div class="notes-list" id="notesList"></div>
+  <div class="notes-panel-footer">
+    <button onclick="exportNotesJSON()" title="导出为 notes.json 备份">导出 JSON</button>
+    <button onclick="exportNotesMD()" title="导出为可读的 Markdown">导出 MD</button>
+    <button onclick="document.getElementById('notesImportInput').click()">导入</button>
+  </div>
+</aside>
+<div class="notes-scrim" id="notesScrim" onclick="toggleNotesPanel(false)"></div>
+
+<!-- ===== 划选工具条 ===== -->
+<div id="selToolbar">
+  <button class="sel-toolbar-btn" onmousedown="event.preventDefault()" onclick="onToolbarNoteClick()">✏️ 记笔记</button>
+</div>
+
+<!-- ===== 笔记编辑器 ===== -->
+<div id="noteEditor">
+  <div class="note-editor-title" id="noteEditorTitle">新建笔记</div>
+  <div class="note-editor-label">引用的原文（可修剪）</div>
+  <textarea id="noteQuoteInput" rows="2" oninput="validateEditorAnchor()"></textarea>
+  <div class="anchor-status" id="anchorStatus"></div>
+  <div class="note-editor-label">我的注释</div>
+  <textarea id="noteTextInput" rows="4" placeholder="写下你的理解、疑问或延伸思考…"></textarea>
+  <div class="note-editor-actions">
+    <button class="primary" onclick="saveNoteFromEditor()">保存</button>
+    <button onclick="cancelNoteEditor()">取消</button>
+    <button class="danger" id="noteDeleteBtn" style="display:none" onclick="deleteNoteFromEditor()">删除</button>
+  </div>
+</div>
+
+<input type="file" id="notesImportInput" accept=".json,application/json" hidden onchange="onImportFile(this)">
+
+<script src="data.js"></script>
+<script>
+// ============================================================
+// Markdown → HTML 渲染器
+// ============================================================
+function renderMD(md) {
+  if (!md) return '';
+  const lines = md.split('\n');
+  let html = '';
+  let inTable = false, tableHtml = '';
+  let inList = false, listType = '', listHtml = '';
+  let inBlockquote = false, bqHtml = '';
+
+  function flushTable() {
+    if (inTable && tableHtml) {
+      html += '<div class="table-wrap"><table>' + tableHtml + '</table></div>';
+    }
+    inTable = false; tableHtml = '';
+  }
+  function flushList() {
+    if (inList && listHtml) {
+      const tag = listType === 'ol' ? 'ol' : 'ul';
+      html += '<' + tag + '>' + listHtml + '</' + tag + '>';
+    }
+    inList = false; listType = ''; listHtml = '';
+  }
+  function flushBq() {
+    if (inBlockquote && bqHtml) {
+      html += '<blockquote>' + bqHtml + '</blockquote>';
+    }
+    inBlockquote = false; bqHtml = '';
+  }
+
+  function parseInline(text) {
+    // Bold
+    text = text.replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>');
+    // Italic
+    text = text.replace(/\*(.+?)\*/g, '<em>$1</em>');
+    // Inline code
+    text = text.replace(/`([^`]+)`/g, '<code>$1</code>');
+    // Links
+    text = text.replace(/\[([^\]]+)\]\(([^)]+)\)/g, '<a href="$2" target="_blank">$1</a>');
+    // Emoji headers in text
+    return text;
+  }
+
+  for (let i = 0; i < lines.length; i++) {
+    const raw = lines[i];
+    const line = raw.trim();
+
+    // Empty line → flush blocks
+    if (!line) {
+      flushTable(); flushList(); flushBq();
+      continue;
+    }
+
+    // Horizontal rule
+    if (/^---+$/.test(line)) {
+      flushTable(); flushList(); flushBq();
+      html += '<hr>';
+      continue;
+    }
+
+    // Blockquote
+    if (line.startsWith('> ')) {
+      flushTable(); flushList();
+      if (!inBlockquote) { inBlockquote = true; bqHtml = ''; }
+      bqHtml += '<p>' + parseInline(line.slice(2)) + '</p>';
+      continue;
+    } else if (inBlockquote && line.startsWith('>')) {
+      bqHtml += '<p>' + parseInline(line.slice(1).trim()) + '</p>';
+      continue;
+    } else {
+      flushBq();
+    }
+
+    // Table
+    if (line.startsWith('|') && line.endsWith('|')) {
+      flushList();
+      if (line.includes('---')) {
+        // Separator row, skip
+        continue;
+      }
+      const cells = line.slice(1, -1).split('|').map(c => c.trim());
+      const isHeader = !inTable;
+      if (!inTable) { inTable = true; tableHtml = ''; }
+      const tag = isHeader ? 'th' : 'td';
+      tableHtml += '<tr>' + cells.map(c => '<' + tag + '>' + parseInline(c) + '</' + tag + '>').join('') + '</tr>';
+      continue;
+    } else {
+      flushTable();
+    }
+
+    // Headers
+    if (line.startsWith('#### ')) {
+      flushList();
+      html += '<h4>' + parseInline(line.slice(5)) + '</h4>';
+      continue;
+    }
+    if (line.startsWith('### ')) {
+      flushList();
+      html += '<h3>' + parseInline(line.slice(4)) + '</h3>';
+      continue;
+    }
+    if (line.startsWith('## ')) {
+      flushList();
+      html += '<h2>' + parseInline(line.slice(3)) + '</h2>';
+      continue;
+    }
+    if (line.startsWith('# ')) {
+      flushList();
+      html += '<h1>' + parseInline(line.slice(2)) + '</h1>';
+      continue;
+    }
+
+    // Lists
+    const ulMatch = line.match(/^(\s*)[-*]\s+(.*)/);
+    const olMatch = line.match(/^(\s*)\d+\.\s+(.*)/);
+    if (ulMatch && !olMatch) {
+      flushTable();
+      if (!inList || listType !== 'ul') { flushList(); inList = true; listType = 'ul'; listHtml = ''; }
+      listHtml += '<li>' + parseInline(ulMatch[2]) + '</li>';
+      continue;
+    }
+    if (olMatch) {
+      flushTable();
+      if (!inList || listType !== 'ol') { flushList(); inList = true; listType = 'ol'; listHtml = ''; }
+      listHtml += '<li>' + parseInline(olMatch[2]) + '</li>';
+      continue;
+    } else {
+      flushList();
+    }
+
+    // Regular paragraph
+    html += '<p>' + parseInline(line) + '</p>';
+  }
+
+  flushTable(); flushList(); flushBq();
+  return html;
+}
+
+// ============================================================
+// 搜索功能
+// ============================================================
+let currentSearchTerm = '';
+
+function doSearch() {
+  const term = document.getElementById('searchInput').value.trim().toLowerCase();
+  currentSearchTerm = term;
+
+  if (!term) {
+    renderDateList();
+    document.getElementById('searchStats').textContent = '';
+    if (currentDate) loadReport(currentDate);
+    return;
+  }
+
+  // Search through all reports
+  const results = [];
+  for (const [date, report] of Object.entries(window.NEWS_DATA.reports)) {
+    const content = report.raw || '';
+    const title = report.title || '';
+    const keywords = (report.keywords || []).join(' ');
+    const searchText = (title + ' ' + keywords + ' ' + content).toLowerCase();
+
+    if (searchText.includes(term)) {
+      // Count matches for relevance
+      const count = (searchText.match(new RegExp(term.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'), 'g')) || []).length;
+      results.push({ date, count, snippet: getSnippet(content.toLowerCase(), term) });
+    }
+  }
+
+  // Render filtered date list
+  const list = document.getElementById('dateList');
+  if (results.length === 0) {
+    list.innerHTML = '<div style="padding:16px 20px;color:var(--text-muted);font-size:0.85rem">无匹配结果</div>';
+  } else {
+    results.sort((a, b) => b.date.localeCompare(a.date));
+    list.innerHTML = results.map(r => `
+      <button class="date-item" onclick="loadReport('${r.date}')">
+        <span class="dot"></span>${r.date} <span style="font-size:0.7rem;color:var(--text-muted)">(${r.count}处匹配)</span>
+      </button>
+    `).join('');
+  }
+  document.getElementById('searchStats').textContent = results.length ? `${results.length} 篇匹配` : '';
+}
+
+function getSnippet(text, term) {
+  const idx = text.indexOf(term);
+  if (idx < 0) return '';
+  const start = Math.max(0, idx - 30);
+  const end = Math.min(text.length, idx + term.length + 50);
+  let s = text.slice(start, end);
+  if (start > 0) s = '…' + s;
+  if (end < text.length) s += '…';
+  return s;
+}
+
+// ============================================================
+// 日期列表渲染
+// ============================================================
+let currentDate = null;
+
+function renderDateList() {
+  const list = document.getElementById('dateList');
+  const reports = window.NEWS_DATA.reports;
+  const dates = Object.keys(reports).sort().reverse();
+
+  // Group by month
+  const groups = {};
+  dates.forEach(d => {
+    const month = d.slice(0, 7);
+    if (!groups[month]) groups[month] = [];
+    groups[month].push(d);
+  });
+
+  const monthNames = {
+    '01':'一月','02':'二月','03':'三月','04':'四月','05':'五月','06':'六月',
+    '07':'七月','08':'八月','09':'九月','10':'十月','11':'十一月','12':'十二月'
+  };
+
+  let html = '';
+  for (const [month, monthDates] of Object.entries(groups).sort((a,b) => b[0].localeCompare(a[0]))) {
+    const [y, m] = month.split('-');
+    html += `<div class="date-group-label">${y}年${monthNames[m] || m}月</div>`;
+    monthDates.forEach(d => {
+      const day = parseInt(d.slice(8, 10));
+      const weekdays = ['日','一','二','三','四','五','六'];
+      const wd = weekdays[new Date(d).getDay()];
+      const active = d === currentDate ? ' active' : '';
+      html += `<button class="date-item${active}" onclick="loadReport('${d}')"><span class="dot"></span>${d.slice(5)} 周${wd} · ${reports[d].title || '日报'}${NOTES.some(n => n.date === d) ? '<span class="note-dot">📝</span>' : ''}</button>`;
+    });
+  }
+  list.innerHTML = html;
+  document.getElementById('reportCount').textContent = `${dates.length} 篇日报`;
+}
+
+// ============================================================
+// 加载日报
+// ============================================================
+function loadReport(date) {
+  const reports = window.NEWS_DATA.reports;
+  const report = reports[date];
+  if (!report) return;
+
+  currentDate = date;
+  document.getElementById('currentDateLabel').textContent = date + ' · ' + (report.title || '财经日报');
+
+  // Clear search
+  if (currentSearchTerm) {
+    document.getElementById('searchInput').value = '';
+    document.getElementById('searchStats').textContent = '';
+    currentSearchTerm = '';
+  }
+
+  // Render content
+  const content = document.getElementById('contentArea');
+  const md = report.raw || '';
+  const html = renderMD(md);
+
+  content.innerHTML = '<div class="article fade-in">' + html + '</div>';
+  content.scrollTop = 0;
+  if (!pendingScrollNoteId) window.scrollTo({ top: 0, behavior: 'smooth' });
+
+  // Update sidebar active state
+  document.querySelectorAll('.date-item').forEach(el => el.classList.remove('active'));
+  const items = document.querySelectorAll('.date-item');
+  items.forEach(el => {
+    if (el.textContent.includes(date)) el.classList.add('active');
+  });
+
+  // If sidebar is filtered, restore full list
+  if (!currentSearchTerm) renderDateList();
+
+  // Highlight search terms
+  if (currentSearchTerm) highlightInContent(currentSearchTerm);
+
+  // 笔记高亮：必须在正文重建后立刻同步贴好，否则会闪一下未高亮的正文
+  applyNoteHighlights(date);
+
+  // 跨日期跳转：等这篇渲染完，再滚到目标笔记
+  if (pendingScrollNoteId) {
+    const target = pendingScrollNoteId;
+    pendingScrollNoteId = null;
+    requestAnimationFrame(function () { scrollToNote(target); });
+  }
+
+  // Update URL hash
+  window.location.hash = date;
+}
+
+function highlightInContent(term) {
+  const content = document.getElementById('contentArea');
+  if (!term) return;
+  const regex = new RegExp('(' + term.replace(/[.*+?^${}()|[\]\\]/g, '\\$&') + ')', 'gi');
+  function walk(node) {
+    if (node.nodeType === 3) {
+      const match = node.textContent.match(regex);
+      if (match) {
+        const span = document.createElement('span');
+        span.innerHTML = node.textContent.replace(regex, '<mark class="search-highlight">$1</mark>');
+        node.parentNode.replaceChild(span, node);
+      }
+    } else if (node.nodeType === 1 && !['SCRIPT','STYLE','MARK'].includes(node.tagName)) {
+      node.childNodes.forEach(walk);
+    }
+  }
+  walk(content);
+}
+
+// ============================================================
+// 主题切换
+// ============================================================
+function toggleTheme() {
+  document.documentElement.classList.toggle('dark');
+  localStorage.setItem('news-theme', document.documentElement.classList.contains('dark') ? 'dark' : 'light');
+}
+
+// ============================================================
+// 初始化
+// ============================================================
+function init() {
+  // Load theme
+  if (localStorage.getItem('news-theme') === 'dark') {
+    document.documentElement.classList.add('dark');
+  }
+
+  initNotes();
+  renderDateList();
+
+  // Check URL hash for direct link
+  const hash = window.location.hash.slice(1);
+  if (hash && window.NEWS_DATA.reports[hash]) {
+    loadReport(hash);
+  } else if (Object.keys(window.NEWS_DATA.reports).length > 0) {
+    // Load latest report
+    const latest = Object.keys(window.NEWS_DATA.reports).sort().reverse()[0];
+    loadReport(latest);
+  }
+
+  // Back to top button
+  window.addEventListener('scroll', () => {
+    document.getElementById('backTop').classList.toggle('visible', window.scrollY > 400);
+  });
+
+  // Keyboard shortcuts
+  document.addEventListener('keydown', e => {
+    if ((e.ctrlKey || e.metaKey) && e.key === 'k') {
+      e.preventDefault();
+      document.getElementById('searchInput').focus();
+    }
+    if (e.key === 'Escape') {
+      // 在笔记编辑器 / 笔记栏里按 Esc 时，别顺手把整篇文章重置掉
+      if (editorState) { cancelNoteEditor(); return; }
+      const tbEl = document.getElementById('selToolbar');
+      if (tbEl && tbEl.style.display === 'block') { hideSelToolbar(); return; }
+      if (e.target && e.target.closest && e.target.closest('#notesPanel')) {
+        document.getElementById('notesSearchInput').value = '';
+        notesQuery = '';
+        renderNotesPanel();
+        return;
+      }
+      document.getElementById('searchInput').value = '';
+      doSearch();
+    }
+  });
+
+  console.log('📰 财经日报阅读器已就绪 · ' + Object.keys(window.NEWS_DATA.reports).length + ' 篇可用');
+}
+
+window.addEventListener('DOMContentLoaded', init);
+</script>
+
+<script>
+// ============================================================
+// 笔记功能
+// 存储策略：localStorage 当工作区（file:// 下无法直接写磁盘），
+// 再用「导出 / 导入」手动同步成项目里的 notes.json 备份。
+// 注意：绝不能把笔记写进 data.js —— 它每天被 build.py 重新生成。
+// ============================================================
+
+const NOTES_KEY = 'news-notes-v1';          // 带版本号，便于以后迁移
+const NOTES_PANEL_KEY = 'news-notes-panel';
+const HL_PRUNE_KEEP = 3;                    // 备份键最多保留几个
+
+let NOTES = [];
+let notesStorageOK = true;
+let notesFilter = 'current';                // 'current' | 'all'
+let notesQuery = '';
+let activeNoteId = null;
+let editorState = null;
+let savedSelectionRange = null;             // 划选时克隆的 Range（点按钮会让选区塌陷）
+let pendingScrollNoteId = null;             // 跨日期跳转时暂存
+let toolbarShownAt = 0;
+let selectionTimer = null;
+
+// ---------- 工具 ----------
+function escapeHtml(s) {
+  return String(s == null ? '' : s)
+    .replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;').replace(/'/g, '&#39;');
+}
+function stamp() {
+  const d = new Date();
+  const p = n => String(n).padStart(2, '0');
+  return d.getFullYear() + p(d.getMonth() + 1) + p(d.getDate()) + '-' + p(d.getHours()) + p(d.getMinutes());
+}
+function noteId() {
+  const d = new Date();
+  const p = n => String(n).padStart(2, '0');
+  return 'n_' + d.getFullYear() + p(d.getMonth() + 1) + p(d.getDate()) + '_' + Math.random().toString(36).slice(2, 8);
+}
+function toast(msg) {
+  let el = document.getElementById('noteToast');
+  if (!el) {
+    el = document.createElement('div');
+    el.id = 'noteToast';
+    el.style.cssText = 'position:fixed;left:50%;bottom:32px;transform:translateX(-50%);' +
+      'background:var(--text);color:var(--bg);padding:8px 16px;border-radius:6px;font-size:.8rem;' +
+      'z-index:60;box-shadow:var(--shadow-lg);opacity:0;transition:opacity .2s;pointer-events:none;';
+    document.body.appendChild(el);
+  }
+  el.textContent = msg;
+  el.style.opacity = '1';
+  clearTimeout(el._t);
+  el._t = setTimeout(() => { el.style.opacity = '0'; }, 2200);
+}
+
+// ============================================================
+// 存储层
+// ============================================================
+function probeStorage() {
+  try {
+    const k = '__notes_probe__';
+    localStorage.setItem(k, '1');
+    localStorage.removeItem(k);
+    return true;
+  } catch (e) { return false; }
+}
+
+function loadNotes() {
+  let raw = null;
+  try { raw = localStorage.getItem(NOTES_KEY); }
+  catch (e) { return []; }
+  if (!raw) return [];
+  try {
+    const parsed = JSON.parse(raw);
+    if (!parsed || !Array.isArray(parsed.notes)) throw new Error('bad shape');
+    return parsed.notes.filter(n => n && typeof n.id === 'string' && typeof n.quote === 'string');
+  } catch (e) {
+    // 数据损坏：备份到 -corrupt- 键再放弃，别直接抹掉
+    try {
+      localStorage.setItem(NOTES_KEY + '-corrupt-' + Date.now(), raw);
+      localStorage.removeItem(NOTES_KEY);
+    } catch (e2) {}
+    console.warn('[笔记] 存储的数据损坏，已备份到 corrupt 键');
+    return [];
+  }
+}
+
+function saveNotes() {
+  if (!notesStorageOK) return false;
+  try {
+    localStorage.setItem(NOTES_KEY, JSON.stringify({ version: 1, updatedAt: Date.now(), notes: NOTES }));
+    pruneBackups();
+    return true;
+  } catch (e) {
+    alert('保存失败（可能是浏览器存储空间已满）。\n请先点「导出 JSON」备份，再删掉一些旧笔记。');
+    return false;
+  }
+}
+
+function pruneBackups() {
+  try {
+    const keys = [];
+    for (let i = 0; i < localStorage.length; i++) {
+      const k = localStorage.key(i);
+      if (k && (k.indexOf(NOTES_KEY + '-backup-') === 0 || k.indexOf(NOTES_KEY + '-corrupt-') === 0)) keys.push(k);
+    }
+    keys.sort();
+    while (keys.length > HL_PRUNE_KEEP) localStorage.removeItem(keys.shift());
+  } catch (e) {}
+}
+
+// ============================================================
+// 锚点内核
+// 核心思路：把 #contentArea .article 下所有文本节点按顺序拼成一个字符串 T，
+// 用 T 里的偏移量定位。遍历时**会进入 span.note-hl 内部**，
+// 所以"有没有高亮"不影响坐标系 —— 从根上避免包了高亮就偏移错位。
+// ============================================================
+function buildArticleIndex() {
+  const root = document.querySelector('#contentArea .article');
+  if (!root) return null;
+  const entries = [], headings = [];
+  let pos = 0;
+  (function walk(node) {
+    if (node.nodeType === 3) {
+      const v = node.nodeValue;
+      if (v.length) { entries.push({ node: node, start: pos, end: pos + v.length }); pos += v.length; }
+      return;
+    }
+    if (node.nodeType !== 1) return;
+    if (node.tagName === 'SCRIPT' || node.tagName === 'STYLE') return;
+    if (/^H[1-4]$/.test(node.tagName)) headings.push({ text: node.textContent.trim(), offset: pos });
+    for (let i = 0; i < node.childNodes.length; i++) walk(node.childNodes[i]);
+  })(root);
+
+  let text = '';
+  for (let i = 0; i < entries.length; i++) text += entries[i].node.nodeValue;
+
+  return {
+    text: text,
+    entries: entries,
+    headings: headings,
+    headingAt: function (o) {
+      let h = '';
+      for (let i = 0; i < headings.length; i++) {
+        if (headings[i].offset <= o) h = headings[i].text; else break;
+      }
+      return h;
+    }
+  };
+}
+
+function firstEntryWithin(index, el) {
+  for (let i = 0; i < index.entries.length; i++) {
+    const e = index.entries[i];
+    if (el === e.node || (el.contains && el.contains(e.node))) return e;
+  }
+  return null;
+}
+function lastEntryWithin(index, el) {
+  for (let i = index.entries.length - 1; i >= 0; i--) {
+    const e = index.entries[i];
+    if (el === e.node || (el.contains && el.contains(e.node))) return e;
+  }
+  return null;
+}
+
+// 把 DOM 里的 (节点, 偏移) 换算成 T 里的字符偏移
+function offsetOfPoint(index, node, offset) {
+  if (!index || !node) return null;
+  if (node.nodeType === 3) {
+    for (let i = 0; i < index.entries.length; i++) {
+      if (index.entries[i].node === node) return index.entries[i].start + offset;
+    }
+    return null;
+  }
+  // 元素节点：offset 是子节点下标（跨块拖选 / 三击全选时会出现）
+  const after = node.childNodes[offset];
+  if (after) { const e = firstEntryWithin(index, after); if (e) return e.start; }
+  const before = offset > 0 ? node.childNodes[offset - 1] : null;
+  if (before) { const e = lastEntryWithin(index, before); if (e) return e.end; }
+  return null;
+}
+
+function rangeFromOffsets(index, start, end) {
+  if (!index || start == null || end == null || end <= start) return null;
+  const findAt = function (o) {
+    let lo = 0, hi = index.entries.length - 1;
+    while (lo <= hi) {
+      const mid = (lo + hi) >> 1;
+      const e = index.entries[mid];
+      if (o < e.start) hi = mid - 1;
+      else if (o >= e.end) lo = mid + 1;
+      else return e;
+    }
+    return null;
+  };
+  const a = findAt(start);
+  const b = findAt(end - 1);
+  if (!a || !b) return null;
+  const r = document.createRange();
+  try {
+    r.setStart(a.node, start - a.start);
+    r.setEnd(b.node, (end - 1) - b.start + 1);
+  } catch (e) { return null; }
+  return r;
+}
+
+function allIndexesOf(hay, needle) {
+  const res = [];
+  if (!needle) return res;
+  let i = hay.indexOf(needle);
+  while (i !== -1) { res.push(i); i = hay.indexOf(needle, i + 1); }
+  return res;
+}
+function uniqueIndexOf(hay, needle) {
+  const hits = allIndexesOf(hay, needle);
+  return hits.length === 1 ? hits[0] : null;
+}
+function pickNearest(hits, hint) {
+  if (!hits.length) return null;
+  if (hits.length === 1) return hits[0];
+  if (hint == null || hint < 0) return null;   // 有歧义又没线索 → 宁可判定失败也不猜
+  let best = hits[0];
+  for (let i = 1; i < hits.length; i++) {
+    if (Math.abs(hits[i] - hint) < Math.abs(best - hint)) best = hits[i];
+  }
+  return best;
+}
+
+// 按「上下文 → 原文」的优先级定位，全部失败返回 null（记为孤儿笔记）
+function resolveAnchor(anchor, index) {
+  if (!index || !anchor || !anchor.exact) return null;
+  const T = index.text;
+  const exact = anchor.exact;
+  const pre = anchor.prefix || '';
+  const suf = anchor.suffix || '';
+  const hint = (typeof anchor.start === 'number') ? anchor.start : -1;
+  let start = null;
+
+  if (pre || suf) {
+    const i = uniqueIndexOf(T, pre + exact + suf);
+    if (i !== null) start = i + pre.length;
+  }
+  if (start === null && pre) {
+    const i = uniqueIndexOf(T, pre + exact);
+    if (i !== null) start = i + pre.length;
+  }
+  if (start === null && suf) {
+    const i = uniqueIndexOf(T, exact + suf);
+    if (i !== null) start = i;
+  }
+  if (start === null) {
+    const hits = allIndexesOf(T, exact);
+    const got = pickNearest(hits, hint);
+    if (got !== null) start = got;
+    else if (hits.length > 1 && typeof anchor.occurrence === 'number' && hits[anchor.occurrence] != null) {
+      start = hits[anchor.occurrence];
+    }
+  }
+  if (start === null) return null;
+  return { start: start, end: start + exact.length };
+}
+
+// 包裹选区。不能用 Range.surroundContents()——选区跨多个文本节点
+//（比如中间夹着 **加粗**）时它会抛 InvalidStateError。
+// 做法：先把两端对齐到文本节点边界，再按偏移收集"完全落在范围内"的文本节点，逐个包。
+function wrapRange(range, id) {
+  if (!range) return [];
+  let sc = range.startContainer, so = range.startOffset;
+  let ec = range.endContainer, eo = range.endOffset;
+
+  // 1) 归一化两端，让它们正好落在文本节点边界上。
+  //    必须「两头都切」：只切一头的话，边界所在的文本节点仍有一部分落在范围外，
+  //    下面按"完全包含"收集节点时就收不到它，高亮会整个丢失。
+  if (sc === ec && sc.nodeType === 3) {
+    if (so > 0) { sc = sc.splitText(so); ec = sc; eo = eo - so; so = 0; }
+    if (eo < sc.length) sc.splitText(eo);   // 切掉右半，终点落到边界
+    range.setStart(sc, 0);
+    range.setEnd(sc, eo);
+  } else {
+    if (sc.nodeType === 3 && so > 0 && so < sc.length) range.setStart(sc.splitText(so), 0);
+    if (ec.nodeType === 3 && eo > 0 && eo < ec.length) {
+      ec.splitText(eo);                     // 切掉右半，终点落到边界
+      range.setEnd(ec, eo);
+    }
+  }
+
+  // 2) 重建索引（splitText 不改变文本总量与顺序），按偏移取范围
+  const idx = buildArticleIndex();
+  if (!idx) return [];
+  const s = offsetOfPoint(idx, range.startContainer, range.startOffset);
+  const e = offsetOfPoint(idx, range.endContainer, range.endOffset);
+  if (s == null || e == null || e <= s) return [];
+
+  // 3) 归一化之后，落在 [s,e) 里的文本节点都是"完全包含"，直接逐个包裹
+  const targets = idx.entries.filter(en => en.start >= s && en.end <= e);
+  const spans = [];
+  for (let i = 0; i < targets.length; i++) {
+    const n = targets[i].node;
+    const span = document.createElement('span');
+    span.className = 'note-hl';
+    span.setAttribute('data-note-id', id);
+    span.addEventListener('click', function (ev) {
+      ev.preventDefault();          // 选区落在 <a> 里时必须拦，否则会跳转
+      ev.stopPropagation();
+      focusNote(id);
+    });
+    n.parentNode.insertBefore(span, n);
+    span.appendChild(n);
+    spans.push(span);
+  }
+  return spans;
+}
+
+function unwrapNoteHighlights(root) {
+  let els;
+  while ((els = root.querySelectorAll('span.note-hl')).length) {
+    for (let i = 0; i < els.length; i++) {
+      const el = els[i];
+      const parent = el.parentNode;
+      if (!parent) continue;
+      while (el.firstChild) parent.insertBefore(el.firstChild, el);
+      parent.removeChild(el);
+    }
+  }
+}
+
+// 每次正文重建后都必须重新贴一次。先解析出所有锚点，再按出现顺序包裹。
+function applyNoteHighlights(date) {
+  const root = document.querySelector('#contentArea .article');
+  if (!root) { renderNotesPanel(); return; }
+  unwrapNoteHighlights(root);
+
+  const mine = NOTES.filter(n => n.date === date);
+  if (!mine.length) { renderNotesPanel(); return; }
+
+  const index = buildArticleIndex();
+  if (!index) { renderNotesPanel(); return; }
+
+  const resolved = [];
+  for (let i = 0; i < mine.length; i++) {
+    const n = mine[i];
+    if (!n.anchor) n.anchor = { exact: n.quote, prefix: '', suffix: '', occurrence: 0, start: -1, end: -1 };
+    const r = resolveAnchor(n.anchor, index);
+    if (r) resolved.push({ note: n, start: r.start, end: r.end });
+    else n.anchor.resolved = false;
+  }
+  resolved.sort((a, b) => a.start - b.start || (b.end - b.start) - (a.end - a.start));
+
+  for (let i = 0; i < resolved.length; i++) {
+    const it = resolved[i];
+    const idx = buildArticleIndex();          // 每条重建一次，稳妥优先
+    const range = rangeFromOffsets(idx, it.start, it.end);
+    if (range) {
+      it.note.anchor.start = it.start;
+      it.note.anchor.end = it.end;
+      it.note.anchor.resolved = true;
+      wrapRange(range, it.note.id);
+    } else {
+      it.note.anchor.resolved = false;
+    }
+  }
+  renderNotesPanel();
+}
+
+// ============================================================
+// 划选工具条
+// ============================================================
+function selectionInArticle() {
+  const sel = window.getSelection();
+  if (!sel || sel.isCollapsed || !sel.rangeCount) return null;
+  const range = sel.getRangeAt(0);
+  if (range.toString().replace(/\s+/g, '').length < 2) return null;   // 忽略误点/双击
+  const article = document.querySelector('#contentArea .article');
+  if (!article) return null;
+  let el = range.commonAncestorContainer;
+  if (el.nodeType !== 1) el = el.parentElement;
+  // 必须落在正文里 —— 这一条天然排除了侧边栏、笔记栏和工具条自身
+  if (!el || !article.contains(el)) return null;
+  if (el.closest && el.closest('#notesPanel, #selToolbar, #noteEditor, .sidebar, textarea, input')) return null;
+  return range;
+}
+
+function onSelectionChange() {
+  const range = selectionInArticle();
+  if (!range) { hideSelToolbar(); return; }
+  savedSelectionRange = range.cloneRange();
+  showSelToolbar(range);
+}
+function onSelectionChangeDebounced() {
+  clearTimeout(selectionTimer);
+  selectionTimer = setTimeout(onSelectionChange, 200);
+}
+
+function showSelToolbar(range) {
+  const tb = document.getElementById('selToolbar');
+  if (!tb) return;
+  let r;
+  try { r = range.getBoundingClientRect(); } catch (e) { return; }
+  if (!r || (r.width === 0 && r.height === 0)) { hideSelToolbar(); return; }
+  tb.style.display = 'block';
+  toolbarShownAt = Date.now();
+  const w = tb.offsetWidth || 96;
+  const h = tb.offsetHeight || 30;
+  let left = r.left + r.width / 2;
+  left = Math.max(8 + w / 2, Math.min(window.innerWidth - 8 - w / 2, left));
+  let top = r.top - h - 8;
+  if (r.top < 56) top = r.bottom + 8;        // 太靠上就翻到下方
+  tb.style.left = left + 'px';
+  tb.style.top = top + 'px';
+}
+
+function hideSelToolbar() {
+  const tb = document.getElementById('selToolbar');
+  if (tb) tb.style.display = 'none';
+}
+
+// 滚动/缩放时直接隐藏，不做跟随重定位（跟随需要 rAF 循环，抖动且易错）
+function onViewportChange() {
+  if (Date.now() - toolbarShownAt < 250) return;   // 忽略刚弹出时的抖动
+  hideSelToolbar();
+}
+
+function onToolbarNoteClick() {
+  hideSelToolbar();
+  if (!savedSelectionRange) return;
+  openNoteEditor({ range: savedSelectionRange, existing: null });
+}
+
+// ============================================================
+// 编辑器
+// ============================================================
+// 引文被改过时，旧的前后缀上下文就不再适用 —— 退化成
+//「只用新引文 + 旧位置提示」来定位，这正好成了手工修复锚点的手段。
+function makeAnchorFromQuote(quote, idx, prevAnchor) {
+  if (prevAnchor && prevAnchor.exact === quote) return prevAnchor;
+  return {
+    exact: quote, prefix: '', suffix: '', occurrence: 0,
+    start: prevAnchor ? prevAnchor.start : -1,
+    end: prevAnchor ? prevAnchor.end : -1,
+    resolved: false
+  };
+}
+
+function openNoteEditor(opts) {
+  const existing = opts.existing || null;
+  const range = opts.range || null;
+  const idx = buildArticleIndex();
+  let quote = '', heading = '', anchor = null, rect = null;
+
+  if (existing) {
+    quote = existing.quote;
+    heading = existing.heading || '';
+    anchor = JSON.parse(JSON.stringify(existing.anchor || { exact: existing.quote }));
+  } else if (range && idx) {
+    const s = offsetOfPoint(idx, range.startContainer, range.startOffset);
+    const e = offsetOfPoint(idx, range.endContainer, range.endOffset);
+    if (s == null || e == null || e <= s) { toast('无法识别所选内容，请重新划选'); return; }
+    const raw = idx.text.slice(s, e);
+    const lead = raw.length - raw.trimStart().length;
+    quote = raw.trim();
+    const st = s + lead;                       // 修剪掉首部空白后的起点
+    heading = idx.headingAt(st);
+    anchor = {
+      exact: quote,
+      prefix: idx.text.slice(Math.max(0, st - 40), st),
+      suffix: idx.text.slice(st + quote.length, st + quote.length + 40),
+      occurrence: 0, start: st, end: st + quote.length, resolved: true
+    };
+    const occ = allIndexesOf(idx.text, quote);
+    for (let i = 0; i < occ.length; i++) { if (occ[i] === st) { anchor.occurrence = i; break; } }
+  } else if (range) {
+    quote = range.toString().trim();
+  }
+
+  editorState = {
+    mode: existing ? 'edit' : 'new',
+    noteId: existing ? existing.id : null,
+    date: existing ? existing.date : (currentDate || ''),
+    heading: heading,
+    anchor: anchor,
+    createdAt: existing ? existing.createdAt : Date.now()
+  };
+
+  try { rect = range ? range.getBoundingClientRect() : null; } catch (e) { rect = null; }
+
+  document.getElementById('noteEditorTitle').textContent = existing ? '编辑笔记' : '新建笔记';
+  document.getElementById('noteQuoteInput').value = quote;
+  document.getElementById('noteTextInput').value = existing ? (existing.note || '') : '';
+  document.getElementById('noteDeleteBtn').style.display = existing ? '' : 'none';
+  const ed = document.getElementById('noteEditor');
+  ed.style.display = 'block';
+  positionEditor(rect);
+  validateEditorAnchor();
+  setTimeout(function () { document.getElementById('noteTextInput').focus(); }, 0);
+}
+
+function positionEditor(rect) {
+  const ed = document.getElementById('noteEditor');
+  if (!ed) return;
+  if (window.innerWidth < 768) { ed.classList.add('sheet'); return; }
+  ed.classList.remove('sheet');
+  const w = ed.offsetWidth, h = ed.offsetHeight;
+  let left, top;
+  if (rect && (rect.width || rect.height)) {
+    left = rect.left;
+    top = rect.bottom + 10;
+    if (top + h > window.innerHeight - 12) top = Math.max(12, rect.top - h - 10);
+  } else {
+    left = (window.innerWidth - w) / 2;
+    top = Math.max(12, (window.innerHeight - h) / 2 - 40);
+  }
+  left = Math.max(12, Math.min(window.innerWidth - w - 12, left));
+  ed.style.left = left + 'px';
+  ed.style.top = top + 'px';
+}
+
+function validateEditorAnchor() {
+  const box = document.getElementById('anchorStatus');
+  if (!box || !editorState) return;
+  const quote = document.getElementById('noteQuoteInput').value.trim();
+  const idx = buildArticleIndex();
+
+  if (!quote) {
+    box.className = 'anchor-status warn';
+    box.innerHTML = '⚠️ 引文不能为空';
+    return;
+  }
+  if (!idx) {
+    box.className = 'anchor-status warn';
+    box.innerHTML = '⚠️ 当前没有可定位的正文';
+    return;
+  }
+
+  const testAnchor = makeAnchorFromQuote(quote, idx, editorState.anchor);
+  const r = resolveAnchor(testAnchor, idx);
+  const reBtn = '<button onclick="reanchorFromSelection()" title="先在正文里划选一段文字，再点这里">📍 重新锚定</button>';
+
+  if (r) {
+    const occ = allIndexesOf(idx.text, quote);
+    for (let i = 0; i < occ.length; i++) { if (occ[i] === r.start) { testAnchor.occurrence = i; break; } }
+    const h = idx.headingAt(r.start);
+    editorState.anchor = testAnchor;
+    box.className = 'anchor-status ok';
+    box.innerHTML = '✔ 已定位' + (h ? ' · ' + escapeHtml(h) : '') + ' ' + reBtn;
+  } else {
+    box.className = 'anchor-status warn';
+    box.innerHTML = '⚠️ 无法在原文中定位（笔记仍会保存） ' + reBtn;
+  }
+}
+
+function reanchorFromSelection() {
+  if (!editorState) return;
+  const range = selectionInArticle();
+  if (!range) { toast('请先在正文里划选一段文字'); return; }
+  const idx = buildArticleIndex();
+  const s = offsetOfPoint(idx, range.startContainer, range.startOffset);
+  const e = offsetOfPoint(idx, range.endContainer, range.endOffset);
+  if (s == null || e == null || e <= s) { toast('无法识别所选内容'); return; }
+  const raw = idx.text.slice(s, e);
+  const lead = raw.length - raw.trimStart().length;
+  const quote = raw.trim();
+  const st = s + lead;
+  document.getElementById('noteQuoteInput').value = quote;
+  editorState.anchor = {
+    exact: quote,
+    prefix: idx.text.slice(Math.max(0, st - 40), st),
+    suffix: idx.text.slice(st + quote.length, st + quote.length + 40),
+    occurrence: 0, start: st, end: st + quote.length, resolved: true
+  };
+  validateEditorAnchor();
+  toast('已用新选区重新锚定');
+}
+
+function saveNoteFromEditor() {
+  if (!editorState) return;
+  const quote = document.getElementById('noteQuoteInput').value.trim();
+  const body = document.getElementById('noteTextInput').value;
+  if (!quote) { alert('引文不能为空'); return; }
+
+  const idx = buildArticleIndex();
+  const anchor = makeAnchorFromQuote(quote, idx, editorState.anchor);
+  let heading = editorState.heading || '';
+  const r = idx ? resolveAnchor(anchor, idx) : null;
+  if (r) {
+    anchor.start = r.start;
+    anchor.end = r.end;
+    anchor.resolved = true;
+    heading = idx.headingAt(r.start);
+    const occ = allIndexesOf(idx.text, quote);
+    for (let i = 0; i < occ.length; i++) { if (occ[i] === r.start) { anchor.occurrence = i; break; } }
+  } else {
+    anchor.resolved = false;
+  }
+
+  if (editorState.mode === 'edit') {
+    const n = NOTES.find(x => x.id === editorState.noteId);
+    if (n) {
+      n.quote = quote; n.note = body; n.anchor = anchor; n.heading = heading;
+      n.updatedAt = Date.now();
+    }
+  } else {
+    // 完全相同的位置已经有笔记了 → 不重复创建，直接打开那条
+    if (r) {
+      const dup = NOTES.find(x => x.anchor && x.anchor.resolved &&
+        x.anchor.start === r.start && x.anchor.end === r.end);
+      if (dup) {
+        closeNoteEditor();
+        focusNote(dup.id);
+        toast('该文本已有笔记，已为你打开');
+        return;
+      }
+    }
+    NOTES.push({
+      id: noteId(),
+      date: editorState.date,
+      quote: quote,
+      note: body,
+      heading: heading,
+      createdAt: editorState.createdAt,
+      updatedAt: Date.now(),
+      anchor: anchor
+    });
+  }
+
+  saveNotes();
+  closeNoteEditor();
+  applyNoteHighlights(currentDate);
+}
+
+function closeNoteEditor() {
+  const ed = document.getElementById('noteEditor');
+  if (ed) ed.style.display = 'none';
+  editorState = null;
+}
+function cancelNoteEditor() { closeNoteEditor(); }
+
+function deleteNoteFromEditor() {
+  if (!editorState || !editorState.noteId) return;
+  const id = editorState.noteId;
+  closeNoteEditor();
+  deleteNote(id);
+}
+
+// ============================================================
+// 笔记面板
+// ============================================================
+function noteItemHtml(n) {
+  const orphan = n.anchor && n.anchor.resolved === false;
+  const missing = !(window.NEWS_DATA && window.NEWS_DATA.reports[n.date]);
+  const ts = n.updatedAt || n.createdAt;
+  const time = ts ? new Date(ts).toLocaleString('zh-CN', { month: '2-digit', day: '2-digit', hour: '2-digit', minute: '2-digit' }) : '';
+  return '<div class="note-item' + (n.id === activeNoteId ? ' active' : '') + '" data-note-id="' + escapeHtml(n.id) + '">' +
+    '<div class="note-quote">' + escapeHtml(n.quote) + '</div>' +
+    (n.note ? '<div class="note-body">' + escapeHtml(n.note) + '</div>' : '') +
+    '<div class="note-meta">' +
+      (n.heading ? '<span class="note-badge">' + escapeHtml(n.heading) + '</span>' : '') +
+      (orphan ? '<span class="note-badge orphan">⚠️ 位置已失效</span>' : '') +
+      (missing ? '<span class="note-badge orphan">📄 原日报缺失</span>' : '') +
+      (time ? '<span>' + escapeHtml(time) + '</span>' : '') +
+    '</div>' +
+    '<div class="note-actions">' +
+      '<button data-act="edit">编辑</button>' +
+      '<button data-act="delete">删除</button>' +
+    '</div>' +
+  '</div>';
+}
+
+function updateFilterButtons() {
+  const a = document.getElementById('notesFilterCurrent');
+  const b = document.getElementById('notesFilterAll');
+  if (a) a.classList.toggle('active', notesFilter === 'current');
+  if (b) b.classList.toggle('active', notesFilter === 'all');
+}
+
+function renderNotesPanel() {
+  const list = document.getElementById('notesList');
+  if (!list) return;
+
+  let items = NOTES.slice();
+  if (notesFilter === 'current' && currentDate) items = items.filter(n => n.date === currentDate);
+  if (notesQuery) {
+    const q = notesQuery.toLowerCase();
+    items = items.filter(n =>
+      ((n.quote || '') + ' ' + (n.note || '') + ' ' + (n.heading || '')).toLowerCase().indexOf(q) !== -1);
+  }
+  items.sort((a, b) => String(b.date).localeCompare(String(a.date)) || (b.createdAt || 0) - (a.createdAt || 0));
+
+  const panelCount = document.getElementById('notesPanelCount');
+  if (panelCount) panelCount.textContent = items.length + ' 条';
+  const topCount = document.getElementById('notesCount');
+  if (topCount) topCount.textContent = NOTES.length;
+
+  updateFilterButtons();
+
+  if (!items.length) {
+    list.innerHTML = '<div class="notes-empty">' +
+      (NOTES.length ? '没有匹配的笔记' : '还没有笔记<br>在正文里划选一段文字试试') + '</div>';
+    return;
+  }
+
+  let html = '', lastDate = null;
+  for (let i = 0; i < items.length; i++) {
+    const n = items[i];
+    if (n.date !== lastDate) {
+      html += '<div class="notes-group-label">' + escapeHtml(n.date) + '</div>';
+      lastDate = n.date;
+    }
+    html += noteItemHtml(n);
+  }
+  list.innerHTML = html;
+}
+
+function setNotesFilter(f) {
+  notesFilter = f;
+  renderNotesPanel();
+}
+function onNotesSearchInput() {
+  notesQuery = document.getElementById('notesSearchInput').value.trim();
+  renderNotesPanel();
+}
+
+function editNote(id) {
+  const n = NOTES.find(x => x.id === id);
+  if (n) openNoteEditor({ existing: n });
+}
+
+function deleteNote(id) {
+  const n = NOTES.find(x => x.id === id);
+  if (!n) return;
+  if (!confirm('删除这条笔记？\n\n「' + n.quote.slice(0, 60) + '」')) return;
+  NOTES = NOTES.filter(x => x.id !== id);
+  if (activeNoteId === id) activeNoteId = null;
+  saveNotes();
+  applyNoteHighlights(currentDate);
+}
+
+// 面板 → 正文；如果笔记属于别的日期，先加载那天的日报
+function focusNote(id) {
+  const n = NOTES.find(x => x.id === id);
+  if (!n) return;
+  activeNoteId = id;
+  if (n.date !== currentDate) {
+    pendingScrollNoteId = id;
+    loadReport(n.date);
+    return;
+  }
+  document.querySelectorAll('#notesList .note-item').forEach(function (el) {
+    el.classList.toggle('active', el.getAttribute('data-note-id') === id);
+  });
+  scrollToNote(id);
+}
+
+function scrollToNote(id) {
+  const row = document.querySelector('#notesList .note-item[data-note-id="' + id + '"]');
+  const listEl = document.getElementById('notesList');
+  if (row && listEl) {
+    // 手工滚动列表容器，避免 scrollIntoView 连窗口一起滚
+    const lr = listEl.getBoundingClientRect();
+    const rr = row.getBoundingClientRect();
+    if (rr.top < lr.top || rr.bottom > lr.bottom) {
+      listEl.scrollTop += (rr.top - lr.top) - (lr.height - rr.height) / 2;
+    }
+  }
+  const marks = document.querySelectorAll('span.note-hl[data-note-id="' + CSS.escape(id) + '"]');
+  if (marks.length) {
+    marks[0].scrollIntoView({ block: 'center', behavior: 'smooth' });
+    marks.forEach(function (m) {
+      m.classList.remove('note-hl-flash');
+      void m.offsetWidth;                    // 强制重排以重启动画
+      m.classList.add('note-hl-flash');
+    });
+  }
+}
+
+function toggleNotesPanel(force, silent) {
+  const open = (typeof force === 'boolean') ? force : !document.body.classList.contains('notes-open');
+  document.body.classList.toggle('notes-open', open);
+  document.body.classList.toggle('notes-closed', !open);
+  const btn = document.getElementById('notesToggle');
+  if (btn) btn.classList.toggle('active', open);
+  if (!silent) {
+    try { localStorage.setItem(NOTES_PANEL_KEY, open ? 'open' : 'closed'); } catch (e) {}
+  }
+}
+
+// ============================================================
+// 导入 / 导出
+// ============================================================
+function downloadFile(name, content, mime) {
+  try {
+    const blob = new Blob([content], { type: mime + ';charset=utf-8' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = name;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    setTimeout(function () { URL.revokeObjectURL(url); }, 1000);
+    toast('已导出 ' + name + '（在浏览器下载目录里）');
+  } catch (e) {
+    alert('导出失败：' + e.message);
+  }
+}
+
+function exportNotesJSON() {
+  const payload = {
+    schema: 'finance-daily-notes',
+    version: 1,
+    app: '财经日报阅读器',
+    exportedAt: new Date().toISOString(),
+    count: NOTES.length,
+    notes: NOTES
+  };
+  downloadFile('notes-' + stamp() + '.json', JSON.stringify(payload, null, 2), 'application/json');
+}
+
+function exportNotesMD() {
+  const byDate = {};
+  NOTES.forEach(function (n) { (byDate[n.date] = byDate[n.date] || []).push(n); });
+  const dates = Object.keys(byDate).sort().reverse();
+  let out = '# 财经日报笔记\n\n> 导出于 ' + new Date().toLocaleString('zh-CN') + ' · 共 ' + NOTES.length + ' 条\n\n';
+  dates.forEach(function (d) {
+    out += '## ' + d + '\n\n';
+    const items = byDate[d].slice().sort(function (a, b) {
+      return ((a.anchor && a.anchor.start) || 0) - ((b.anchor && b.anchor.start) || 0);
+    });
+    items.forEach(function (n) {
+      if (n.heading) out += '### ' + n.heading + '\n\n';
+      out += '> ' + String(n.quote || '').replace(/\n/g, ' ') + '\n\n';
+      if (n.note) out += n.note + '\n\n';
+      out += '*— ' + new Date(n.createdAt || Date.now()).toLocaleString('zh-CN') + '*\n\n';
+    });
+  });
+  downloadFile('notes-' + stamp() + '.md', out, 'text/markdown');
+}
+
+function onImportFile(input) {
+  const file = input.files && input.files[0];
+  if (!file) return;
+  const reader = new FileReader();
+  reader.onerror = function () { alert('读取文件失败。'); input.value = ''; };
+  reader.onload = function () {
+    input.value = '';
+    let parsed;
+    try {
+      parsed = JSON.parse(reader.result);
+    } catch (e) {
+      alert('导入失败：这个文件不是合法的 JSON。');
+      return;
+    }
+    const incoming = parsed && Array.isArray(parsed.notes) ? parsed.notes : null;
+    if (!incoming) { alert('导入失败：文件里没有 notes 数组。'); return; }
+
+    const valid = incoming.filter(n => n && typeof n.id === 'string' && typeof n.quote === 'string');
+    const invalid = incoming.length - valid.length;
+    const merge = confirm(
+      '确定 = 合并（按 id 保留较新版本）\n' +
+      '取消 = 用文件内容整体替换现有笔记\n\n' +
+      '文件中 ' + incoming.length + ' 条' + (invalid ? '（' + invalid + ' 条格式无效会被跳过）' : '') +
+      '，当前有 ' + NOTES.length + ' 条。'
+    );
+
+    // 导入前先备份当前状态
+    try {
+      localStorage.setItem(NOTES_KEY + '-backup-' + Date.now(), JSON.stringify({ version: 1, notes: NOTES }));
+    } catch (e) {}
+
+    let added = 0, updated = 0, skipped = 0;
+    if (merge) {
+      const map = {};
+      NOTES.forEach(function (n) { map[n.id] = n; });
+      valid.forEach(function (n) {
+        const cur = map[n.id];
+        if (!cur) { NOTES.push(n); added++; }
+        else if ((n.updatedAt || 0) > (cur.updatedAt || 0)) { Object.assign(cur, n); updated++; }
+        else skipped++;
+      });
+    } else {
+      NOTES = valid.slice();
+      added = valid.length;
+    }
+
+    pruneBackups();
+    saveNotes();
+    applyNoteHighlights(currentDate);
+    alert('导入完成：新增 ' + added + ' · 更新 ' + updated + ' · 跳过 ' + skipped + (invalid ? ' · 无效 ' + invalid : ''));
+  };
+  reader.readAsText(file, 'utf-8');
+}
+
+// ============================================================
+// 初始化
+// ============================================================
+function initNotes() {
+  notesStorageOK = probeStorage();
+  NOTES = loadNotes();
+
+  let ps = null;
+  try { ps = localStorage.getItem(NOTES_PANEL_KEY); } catch (e) {}
+  if (!ps) ps = window.innerWidth > 1024 ? 'open' : 'closed';
+  toggleNotesPanel(ps === 'open', true);
+
+  document.addEventListener('selectionchange', onSelectionChangeDebounced);
+  window.addEventListener('scroll', onViewportChange, { passive: true });
+  window.addEventListener('resize', onViewportChange);
+
+  // 面板列表用事件委托，避免把 id 拼进 onclick
+  const list = document.getElementById('notesList');
+  if (list) {
+    list.addEventListener('click', function (e) {
+      const item = e.target.closest && e.target.closest('.note-item');
+      if (!item) return;
+      const id = item.getAttribute('data-note-id');
+      const btn = e.target.closest && e.target.closest('button[data-act]');
+      if (btn) {
+        e.stopPropagation();
+        if (btn.getAttribute('data-act') === 'edit') editNote(id);
+        else deleteNote(id);
+        return;
+      }
+      focusNote(id);
+    });
+  }
+
+  renderNotesPanel();
+
+  if (!notesStorageOK) {
+    toast('浏览器存储不可用，本次笔记无法保存，请及时导出');
+  }
+  console.log('📝 笔记功能已就绪 · ' + NOTES.length + ' 条');
+}
+</script>
+
+</body>
+</html>

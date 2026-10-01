@@ -1,0 +1,17 @@
+# 运行日志：含本机路径和 Windows 用户名，不上传
+*.log
+
+# Python 缓存
+__pycache__/
+*.pyc
+
+# 计划任务运行时产生的锁文件
+.report.lock
+
+# Claude Code 本机配置
+.claude/
+
+# 编辑器 / 系统杂物
+.vscode/
+Thumbs.db
+desktop.ini
