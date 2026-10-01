@@ -54,6 +54,43 @@ function Merge-Output {
     }
 }
 
+# Publish the report so the phone sees it. Best-effort by design: the report is
+# already on disk by the time this runs, so a push failure must never fail the
+# task or lose the day's work. The task fires every 2h, so any failure here is
+# retried on the next firing through the already-exists path below.
+function Publish-Report {
+    if (-not (Test-Path (Join-Path $dir ".git"))) {
+        Log "publish: $dir is not a git repo. skip."
+        return
+    }
+    try {
+        & git -C $dir add -A 2>&1 | Out-Null
+        # Exit 0 means the staged tree matches HEAD, i.e. already published.
+        & git -C $dir diff --cached --quiet 2>&1 | Out-Null
+        if ($LASTEXITCODE -eq 0) {
+            Log "publish: nothing new to publish."
+            return
+        }
+        & git -C $dir commit -q -m "report: $today" 2>&1 | Out-Null
+        if ($LASTEXITCODE -ne 0) {
+            Log "publish: commit failed (exit $LASTEXITCODE)."
+            return
+        }
+        # github.com is reachable only through the local proxy, which is pinned in
+        # this repo's git config. credential.interactive=false stops git from
+        # opening a credential prompt that the hidden task window cannot display -
+        # that would hang until the 2h execution limit kills the run.
+        & git -C $dir -c credential.interactive=false push -q origin main 2>&1 | Out-Null
+        if ($LASTEXITCODE -eq 0) {
+            Log "publish: pushed to GitHub."
+        } else {
+            Log "publish: push failed (exit $LASTEXITCODE). kept locally; retry next firing."
+        }
+    } catch {
+        Log "publish: ERROR $($_.Exception.Message)"
+    }
+}
+
 # 0) Guard: skip between 00:00 and 07:00.
 #    The report is "today's", but before 07:00 today's market news hasn't
 #    happened yet (A-share opens 09:30). Generating now would write a hollow
@@ -68,6 +105,9 @@ if ($hour -lt 7) {
 # 1) Idempotency: already generated today? skip.
 if (Test-Path $report) {
     Log "today's report already exists ($today.md). skip."
+    # Still try to publish: an earlier firing may have produced the report but
+    # failed to push it (proxy down, offline). This is the retry path.
+    Publish-Report
     exit 0
 }
 
@@ -135,6 +175,8 @@ try {
             Log "build.py fallback ran (exit $buildExit)."
         }
         Log "done. report ready."
+        # 6) Publish so the phone sees today's report without a manual push.
+        Publish-Report
     } else {
         Log "WARN: $today.md was not created. generation may have failed."
     }
