@@ -122,10 +122,12 @@
     letter-spacing: 0.05em;
   }
   .date-item {
-    display: block;
+    display: flex;
+    align-items: flex-start;
+    gap: 8px;
     width: 100%;
     text-align: left;
-    padding: 7px 20px;
+    padding: 8px 20px;
     border: none;
     background: transparent;
     color: var(--text);
@@ -143,14 +145,35 @@
     color: var(--accent);
   }
   .date-item .dot {
-    display: inline-block;
+    flex: none;
     width: 6px; height: 6px;
     border-radius: 50%;
     background: var(--accent);
-    margin-right: 6px;
-    vertical-align: middle;
+    margin-top: 8px;
     opacity: 0.6;
   }
+  /* 日期一行、主题一行（超长省略），每条固定两行高 */
+  .date-item .di-text {
+    display: flex;
+    flex-direction: column;
+    min-width: 0;
+    flex: 1;
+    line-height: 1.45;
+  }
+  .date-item .di-date {
+    font-size: 0.82rem;
+    font-weight: 600;
+  }
+  .date-item .di-theme {
+    font-size: 0.74rem;
+    font-weight: 400;
+    color: var(--text-muted);
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+  .date-item.active .di-theme { color: var(--accent); opacity: .85; }
+  .date-item .note-dot { flex: none; margin-left: auto; margin-top: 1px; }
   .sidebar-footer {
     padding: 12px 20px;
     border-top: 1px solid var(--border);
@@ -256,7 +279,7 @@
   .empty-state p { font-size: 0.9rem; line-height: 1.7; }
 
   /* MD 渲染后的样式 */
-  .article { font-family: "PingFang SC", "Noto Serif SC", "Source Han Serif SC", Georgia, "Times New Roman", serif; }
+  .article { font-family: "PingFang SC", "Noto Serif SC", "Source Han Serif SC", Georgia, "Times New Roman", "Apple Color Emoji", "Segoe UI Emoji", "Noto Color Emoji", serif; }
   .article h1 { font-size: 1.7rem; font-weight: 800; margin: 8px 0 24px; letter-spacing: 0.02em; }
   .article h2 {
     font-size: 1.2rem; font-weight: 700; margin: 40px 0 16px; padding-bottom: 8px;
@@ -275,6 +298,28 @@
   .article blockquote p { margin: 4px 0; }
   .article strong { color: var(--accent); font-weight: 700; }
   .article hr { border: none; border-top: 1px solid var(--border); margin: 32px 0; }
+
+  /* 讲解三节：日报 10-13 起改用 #### 小标题，这里重新给它们套上卡片框。
+     新闻事实保持裸列表，只有「专业解读 / 白话版 / 知识点」成框。 */
+  .article .md-sec {
+    margin: 16px 0;
+    padding: 1px 18px 12px;
+    border: 1px solid var(--border);
+    border-left: 3px solid var(--accent);
+    border-radius: 0 8px 8px 0;
+    background: var(--card);
+  }
+  .article .md-sec > h4 {
+    margin: 13px 0 8px;
+    font-size: 0.82rem;
+    font-weight: 700;
+    letter-spacing: 0.03em;
+    color: var(--accent);
+  }
+  .article .md-sec.sec-plain { background: var(--sidebar-bg); border-left-color: var(--text-muted); }
+  .article .md-sec.sec-plain > h4 { color: var(--text-muted); }
+  .article .md-sec.sec-know { background: var(--accent-soft); }
+  .article .md-sec > :last-child { margin-bottom: 4px; }
 
   /* 表格 */
   .article .table-wrap {
@@ -352,6 +397,10 @@
       text-overflow: ellipsis;
       white-space: nowrap;
     }
+    .topbar-left { flex: 1 1 auto; min-width: 0; }
+    .topbar-right { flex: none; gap: 8px; }
+    .topbar-right .stats { display: none; }
+    .notes-toggle { padding: 5px 10px; }
     .content { padding: 20px 16px 48px; }
   }
 
@@ -359,10 +408,23 @@
   .search-highlight { background: #ffd54f; padding: 0 2px; border-radius: 2px; }
   .dark .search-highlight { background: #7a5a00; }
 
+  /* ===== 高光颜色 =====
+     --hl-bg 用于正文底色，--hl-swatch 用于选色圆点 / 笔记列表色块。 */
+  [data-color="yellow"] { --hl-bg: #ffe27a; --hl-swatch: #e8b400; }
+  [data-color="green"]  { --hl-bg: #b9f0c6; --hl-swatch: #22a45d; }
+  [data-color="blue"]   { --hl-bg: #b9dcff; --hl-swatch: #2f7fd6; }
+  [data-color="pink"]   { --hl-bg: #ffc9de; --hl-swatch: #e05a8c; }
+  [data-color="purple"] { --hl-bg: #dcc9ff; --hl-swatch: #7d5bd6; }
+  .dark [data-color="yellow"] { --hl-bg: rgba(255,214,64,.30); }
+  .dark [data-color="green"]  { --hl-bg: rgba(52,199,110,.28); }
+  .dark [data-color="blue"]   { --hl-bg: rgba(64,156,255,.30); }
+  .dark [data-color="pink"]   { --hl-bg: rgba(255,105,160,.28); }
+  .dark [data-color="purple"] { --hl-bg: rgba(150,110,255,.30); }
+
   /* ===== 笔记：正文高亮 ===== */
   /* 只改 background / box-shadow —— 不加 padding/border/font，避免正文重排 */
   .note-hl {
-    background: var(--note-hl);
+    background: var(--hl-bg, var(--note-hl));
     box-shadow: inset 0 -1px 0 rgba(0,0,0,.10);
     cursor: pointer;
     border-radius: 0;
@@ -370,8 +432,8 @@
   .note-hl:hover { filter: brightness(.96); }
   .note-hl.note-hl-flash { animation: noteFlash 1.2s ease; }
   @keyframes noteFlash {
-    0%, 100% { background: var(--note-hl); }
-    30%, 70% { background: var(--note-hl-active); }
+    0%, 100% { box-shadow: inset 0 -1px 0 rgba(0,0,0,.10); }
+    30%, 70% { box-shadow: 0 0 0 2px var(--accent); }
   }
   .note-dot { font-size: 0.65rem; margin-left: 4px; opacity: .75; }
 
@@ -380,6 +442,7 @@
     background: none; border: 1px solid var(--border); border-radius: 4px;
     padding: 5px 12px; font-size: .78rem; cursor: pointer;
     color: var(--text-muted); font-family: inherit; transition: all .2s;
+    white-space: nowrap; flex: none;
   }
   .notes-toggle:hover { color: var(--text); border-color: var(--text-muted); }
   .notes-toggle.active { color: var(--accent); border-color: var(--accent); background: var(--accent-soft); }
@@ -429,8 +492,12 @@
   .note-item.active { border-color: var(--accent); box-shadow: 0 0 0 2px var(--accent-soft); }
   .note-quote {
     font-size: .8rem; line-height: 1.55; color: var(--text);
-    border-left: 2px solid var(--note-hl); padding-left: 8px; margin-bottom: 6px;
+    border-left: 2px solid var(--hl-swatch, var(--note-hl)); padding-left: 8px; margin-bottom: 6px;
     display: -webkit-box; -webkit-line-clamp: 4; -webkit-box-orient: vertical; overflow: hidden;
+  }
+  .note-swatch {
+    display: inline-block; width: 8px; height: 8px; border-radius: 50%;
+    background: var(--hl-swatch, var(--note-hl)); flex: none;
   }
   .note-body { font-size: .82rem; line-height: 1.6; white-space: pre-wrap; word-break: break-word; }
   .note-meta {
@@ -457,13 +524,50 @@
   .notes-panel-footer button:hover { color: var(--text); border-color: var(--text-muted); }
 
   /* ===== 划选工具条 ===== */
-  #selToolbar { position: fixed; z-index: 40; display: none; transform: translateX(-50%); }
-  .sel-toolbar-btn {
-    background: var(--text); color: var(--bg); border: none; border-radius: 6px;
-    padding: 6px 12px; font-size: .78rem; cursor: pointer; font-family: inherit;
+  #selToolbar {
+    position: fixed; z-index: 40; display: none; transform: translateX(-50%);
+    align-items: center; gap: 6px;
+    background: var(--card); border: 1px solid var(--border);
+    border-radius: 999px; padding: 5px 8px;
     box-shadow: var(--shadow-lg); white-space: nowrap;
   }
+  .sel-color {
+    width: 22px; height: 22px; padding: 0; flex: none;
+    border: 2px solid transparent; border-radius: 50%;
+    background: var(--hl-swatch); cursor: pointer;
+    transition: transform .12s, border-color .12s;
+  }
+  .sel-color:hover { transform: scale(1.15); }
+  .sel-color.active { border-color: var(--text); }
+  .sel-sep { width: 1px; height: 18px; background: var(--border); flex: none; margin: 0 2px; }
+  .sel-toolbar-btn {
+    background: var(--text); color: var(--bg); border: none; border-radius: 999px;
+    padding: 6px 12px; font-size: .78rem; cursor: pointer; font-family: inherit;
+    white-space: nowrap;
+  }
   .sel-toolbar-btn:hover { background: var(--accent); color: #fff; }
+  /* 清除高光：次要动作，描边样式，别和「记笔记」抢注意力 */
+  .sel-toolbar-btn.sel-clear {
+    background: none; color: var(--text-muted);
+    border: 1px solid var(--border); padding: 5px 11px;
+  }
+  .sel-toolbar-btn.sel-clear:hover {
+    background: none; color: #d9534f; border-color: #d9534f;
+  }
+  /* 手机：色块和按钮放大到好点按的尺寸 */
+  @media (max-width: 768px) {
+    #selToolbar { gap: 7px; padding: 6px 10px; }
+    .sel-color { width: 26px; height: 26px; }
+    .sel-toolbar-btn { padding: 7px 10px; }
+    .sel-toolbar-btn.sel-clear { padding: 6px 9px; }
+  }
+  /* 小屏（≤360）再压一档，保证工具条不会探出屏幕 */
+  @media (max-width: 380px) {
+    #selToolbar { gap: 5px; padding: 5px 8px; }
+    .sel-color { width: 22px; height: 22px; }
+    .sel-toolbar-btn { padding: 6px 8px; font-size: .74rem; }
+    .sel-toolbar-btn.sel-clear { padding: 5px 7px; }
+  }
 
   /* ===== 笔记编辑器 ===== */
   #noteEditor {
@@ -478,6 +582,8 @@
   }
   .note-editor-title { font-size: .8rem; font-weight: 700; margin-bottom: 10px; color: var(--accent); }
   .note-editor-label { font-size: .7rem; color: var(--text-muted); margin: 8px 0 4px; }
+  .note-colors { display: flex; gap: 8px; margin: 2px 0 10px; }
+  .note-colors .sel-color { width: 24px; height: 24px; }
   .note-editor textarea {
     width: 100%; border: 1px solid var(--border); border-radius: 6px; padding: 8px 10px;
     font-size: .82rem; font-family: inherit; background: var(--bg); color: var(--text);
@@ -606,8 +712,15 @@
 <div class="notes-scrim" id="notesScrim" onclick="toggleNotesPanel(false)"></div>
 
 <!-- ===== 划选工具条 ===== -->
-<div id="selToolbar">
+<div id="selToolbar" onpointerdown="holdSelToolbar()">
+  <button class="sel-color" data-color="yellow" title="黄色高光" aria-label="黄色高光" onmousedown="event.preventDefault()" onclick="onToolbarColorClick('yellow')"></button>
+  <button class="sel-color" data-color="green" title="绿色高光" aria-label="绿色高光" onmousedown="event.preventDefault()" onclick="onToolbarColorClick('green')"></button>
+  <button class="sel-color" data-color="blue" title="蓝色高光" aria-label="蓝色高光" onmousedown="event.preventDefault()" onclick="onToolbarColorClick('blue')"></button>
+  <button class="sel-color" data-color="pink" title="粉色高光" aria-label="粉色高光" onmousedown="event.preventDefault()" onclick="onToolbarColorClick('pink')"></button>
+  <button class="sel-color" data-color="purple" title="紫色高光" aria-label="紫色高光" onmousedown="event.preventDefault()" onclick="onToolbarColorClick('purple')"></button>
+  <span class="sel-sep"></span>
   <button class="sel-toolbar-btn" onmousedown="event.preventDefault()" onclick="onToolbarNoteClick()">✏️ 记笔记</button>
+  <button class="sel-toolbar-btn sel-clear" title="清除所选范围内的高光" aria-label="清除高光" onmousedown="event.preventDefault()" onclick="onToolbarClearClick()">✖ 清除</button>
 </div>
 
 <!-- ===== 笔记编辑器 ===== -->
@@ -616,6 +729,14 @@
   <div class="note-editor-label">引用的原文（可修剪）</div>
   <textarea id="noteQuoteInput" rows="2" oninput="validateEditorAnchor()"></textarea>
   <div class="anchor-status" id="anchorStatus"></div>
+  <div class="note-editor-label">高光颜色</div>
+  <div class="note-colors" id="noteColorRow">
+    <button class="sel-color" data-color="yellow" title="黄色" aria-label="黄色" onmousedown="event.preventDefault()" onclick="setEditorColor('yellow')"></button>
+    <button class="sel-color" data-color="green" title="绿色" aria-label="绿色" onmousedown="event.preventDefault()" onclick="setEditorColor('green')"></button>
+    <button class="sel-color" data-color="blue" title="蓝色" aria-label="蓝色" onmousedown="event.preventDefault()" onclick="setEditorColor('blue')"></button>
+    <button class="sel-color" data-color="pink" title="粉色" aria-label="粉色" onmousedown="event.preventDefault()" onclick="setEditorColor('pink')"></button>
+    <button class="sel-color" data-color="purple" title="紫色" aria-label="紫色" onmousedown="event.preventDefault()" onclick="setEditorColor('purple')"></button>
+  </div>
   <div class="note-editor-label">我的注释</div>
   <textarea id="noteTextInput" rows="4" placeholder="写下你的理解、疑问或延伸思考…"></textarea>
   <div class="note-editor-actions">
@@ -637,8 +758,10 @@ function renderMD(md) {
   const lines = md.split('\n');
   let html = '';
   let inTable = false, tableHtml = '';
-  let inList = false, listType = '', listHtml = '';
+  let listItems = [];            // {indent, ordered, num, text}
+  let listPendingBlank = false;  // 列表中间空了一行，等下一行再判断是否结束
   let inBlockquote = false, bqHtml = '';
+  let sectionOpen = false;       // 当前内容是否包在「讲解」卡片里
 
   function flushTable() {
     if (inTable && tableHtml) {
@@ -646,18 +769,20 @@ function renderMD(md) {
     }
     inTable = false; tableHtml = '';
   }
-  function flushList() {
-    if (inList && listHtml) {
-      const tag = listType === 'ol' ? 'ol' : 'ul';
-      html += '<' + tag + '>' + listHtml + '</' + tag + '>';
-    }
-    inList = false; listType = ''; listHtml = '';
-  }
   function flushBq() {
     if (inBlockquote && bqHtml) {
       html += '<blockquote>' + bqHtml + '</blockquote>';
     }
     inBlockquote = false; bqHtml = '';
+  }
+  function flushList() {
+    if (listItems.length) html += buildListHtml(listItems);
+    listItems = [];
+    listPendingBlank = false;
+  }
+  function flushAll() { flushTable(); flushBq(); flushList(); }
+  function closeSection() {
+    if (sectionOpen) { html += '</div>'; sectionOpen = false; }
   }
 
   function parseInline(text) {
@@ -673,19 +798,76 @@ function renderMD(md) {
     return text;
   }
 
+  function indentWidth(s) { return (s || '').replace(/\t/g, '  ').length; }
+
+  // 表格分隔行：|---|:--|--:| 都算
+  function isTableSepLine(s) {
+    if (!s || !s.startsWith('|') || !s.endsWith('|') || s.length < 3) return false;
+    const cs = s.slice(1, -1).split('|').map(c => c.trim());
+    return cs.length > 0 && cs.every(c => /^:?-+:?$/.test(c));
+  }
+
+  // 把收集到的列表项按缩进还原成嵌套 <ul>/<ol>。
+  // 空行分隔的列表项已并入同一个 listItems，编号不会再被切成 1./1./1.。
+  function buildListHtml(items) {
+    function build(start, indent) {
+      const ordered = items[start].ordered;
+      let out = ordered ? '<ol>' : '<ul>';
+      let i = start;
+      while (i < items.length) {
+        const it = items[i];
+        if (it.indent !== indent || it.ordered !== ordered) break;
+        out += '<li' + (ordered ? ' value="' + it.num + '"' : '') + '>' + parseInline(it.text);
+        i++;
+        // 缩进更深的项属于上一条 li
+        while (i < items.length && items[i].indent > indent) {
+          const sub = build(i, items[i].indent);
+          out += sub.html;
+          i = sub.i;
+        }
+        out += '</li>';
+      }
+      out += ordered ? '</ol>' : '</ul>';
+      return { html: out, i: i };
+    }
+    let out = '', i = 0;
+    while (i < items.length) {
+      const r = build(i, items[i].indent);
+      out += r.html;
+      i = r.i;
+    }
+    return out;
+  }
+
+  // 日报 10-13 起把三层讲解改成 #### 小标题，这里给它们套回卡片框
+  function sectionClassFor(text) {
+    if (/专业解读/.test(text)) return 'sec-explain';
+    if (/白话版|白话解读/.test(text)) return 'sec-plain';
+    if (/知识点/.test(text)) return 'sec-know';
+    return '';
+  }
+
   for (let i = 0; i < lines.length; i++) {
     const raw = lines[i];
     const line = raw.trim();
 
     // Empty line → flush blocks
     if (!line) {
-      flushTable(); flushList(); flushBq();
+      flushTable(); flushBq();
+      // 列表里的空行先不结束列表，等下一行看清是不是还是列表项
+      if (listItems.length) { listPendingBlank = true; continue; }
       continue;
+    }
+
+    const isListLine = /^\s*(?:[-*]|\d+\.)\s+/.test(raw);
+    if (listPendingBlank) {
+      listPendingBlank = false;
+      if (!isListLine) flushList();
     }
 
     // Horizontal rule
     if (/^---+$/.test(line)) {
-      flushTable(); flushList(); flushBq();
+      flushAll(); closeSection();
       html += '<hr>';
       continue;
     }
@@ -705,13 +887,11 @@ function renderMD(md) {
 
     // Table
     if (line.startsWith('|') && line.endsWith('|')) {
-      flushList();
-      if (line.includes('---')) {
-        // Separator row, skip
-        continue;
-      }
+      flushList(); flushBq();
+      // 分隔行有 |---| 和 |:--| 两种写法，早先只认前者，导致 |:--| 被当成正文渲染出来
+      if (isTableSepLine(line)) continue;
       const cells = line.slice(1, -1).split('|').map(c => c.trim());
-      const isHeader = !inTable;
+      const isHeader = !inTable && isTableSepLine((lines[i + 1] || '').trim());
       if (!inTable) { inTable = true; tableHtml = ''; }
       const tag = isHeader ? 'th' : 'td';
       tableHtml += '<tr>' + cells.map(c => '<' + tag + '>' + parseInline(c) + '</' + tag + '>').join('') + '</tr>';
@@ -722,49 +902,41 @@ function renderMD(md) {
 
     // Headers
     if (line.startsWith('#### ')) {
-      flushList();
-      html += '<h4>' + parseInline(line.slice(5)) + '</h4>';
+      flushAll(); closeSection();
+      const htext = line.slice(5);
+      const cls = sectionClassFor(htext);
+      if (cls) { html += '<div class="md-sec ' + cls + '">'; sectionOpen = true; }
+      html += '<h4>' + parseInline(htext) + '</h4>';
       continue;
     }
-    if (line.startsWith('### ')) {
-      flushList();
-      html += '<h3>' + parseInline(line.slice(4)) + '</h3>';
-      continue;
-    }
-    if (line.startsWith('## ')) {
-      flushList();
-      html += '<h2>' + parseInline(line.slice(3)) + '</h2>';
-      continue;
-    }
-    if (line.startsWith('# ')) {
-      flushList();
-      html += '<h1>' + parseInline(line.slice(2)) + '</h1>';
+    if (line.startsWith('### ') || line.startsWith('## ') || line.startsWith('# ')) {
+      flushAll(); closeSection();
+      if (line.startsWith('### ')) html += '<h3>' + parseInline(line.slice(4)) + '</h3>';
+      else if (line.startsWith('## ')) html += '<h2>' + parseInline(line.slice(3)) + '</h2>';
+      else html += '<h1>' + parseInline(line.slice(2)) + '</h1>';
       continue;
     }
 
     // Lists
-    const ulMatch = line.match(/^(\s*)[-*]\s+(.*)/);
-    const olMatch = line.match(/^(\s*)\d+\.\s+(.*)/);
+    const ulMatch = raw.match(/^(\s*)[-*]\s+(.*)/);
+    const olMatch = raw.match(/^(\s*)(\d+)\.\s+(.*)/);
     if (ulMatch && !olMatch) {
-      flushTable();
-      if (!inList || listType !== 'ul') { flushList(); inList = true; listType = 'ul'; listHtml = ''; }
-      listHtml += '<li>' + parseInline(ulMatch[2]) + '</li>';
+      flushTable(); flushBq();
+      listItems.push({ indent: indentWidth(ulMatch[1]), ordered: false, num: 0, text: ulMatch[2].trim() });
       continue;
     }
     if (olMatch) {
-      flushTable();
-      if (!inList || listType !== 'ol') { flushList(); inList = true; listType = 'ol'; listHtml = ''; }
-      listHtml += '<li>' + parseInline(olMatch[2]) + '</li>';
+      flushTable(); flushBq();
+      listItems.push({ indent: indentWidth(olMatch[1]), ordered: true, num: parseInt(olMatch[2], 10), text: olMatch[3].trim() });
       continue;
-    } else {
-      flushList();
     }
 
     // Regular paragraph
+    flushAll();
     html += '<p>' + parseInline(line) + '</p>';
   }
 
-  flushTable(); flushList(); flushBq();
+  flushAll(); closeSection();
   return html;
 }
 
@@ -854,15 +1026,35 @@ function renderDateList() {
     // monthNames 里已经带「月」了，这里不能再拼一个，否则会显示成「十月月」
     html += `<div class="date-group-label">${y}年${monthNames[m] || m}</div>`;
     monthDates.forEach(d => {
-      const day = parseInt(d.slice(8, 10));
       const weekdays = ['日','一','二','三','四','五','六'];
       const wd = weekdays[new Date(d).getDay()];
       const active = d === currentDate ? ' active' : '';
-      html += `<button class="date-item${active}" onclick="loadReport('${d}')"><span class="dot"></span>${d.slice(5)} 周${wd} · ${reports[d].title || '日报'}${NOTES.some(n => n.date === d) ? '<span class="note-dot">📝</span>' : ''}</button>`;
+      const theme = reportTheme(reports[d].title);
+      const hasNote = NOTES.some(n => n.date === d);
+      html += `<button class="date-item${active}" onclick="loadReport('${d}')">` +
+        `<span class="dot"></span>` +
+        `<span class="di-text">` +
+          `<span class="di-date">${d.slice(5)} 周${wd}</span>` +
+          `<span class="di-theme">${escapeHtml(theme)}</span>` +
+        `</span>` +
+        (hasNote ? '<span class="note-dot">📝</span>' : '') +
+        `</button>`;
     });
   }
   list.innerHTML = html;
   document.getElementById('reportCount').textContent = `${dates.length} 篇日报`;
+}
+
+// 日期栏只显示「周三·主题」里的主题，避免一条占三四行
+function reportTheme(title) {
+  if (!title) return '日报';
+  const m = String(title).match(/[（(][^（）()]*?[·・]\s*([^（）()]+)[）)]\s*$/);
+  if (m && m[1].trim()) return m[1].trim();
+  const stripped = String(title)
+    .replace(/^.*?—\s*\d{4}\s*年\s*\d{1,2}\s*月\s*\d{1,2}\s*日\s*/, '')
+    .replace(/^[（(].*$/, '')
+    .trim();
+  return stripped || '日报';
 }
 
 // ============================================================
@@ -1009,7 +1201,7 @@ function init() {
       // 在笔记编辑器 / 笔记栏里按 Esc 时，别顺手把整篇文章重置掉
       if (editorState) { cancelNoteEditor(); return; }
       const tbEl = document.getElementById('selToolbar');
-      if (tbEl && tbEl.style.display === 'block') { hideSelToolbar(); return; }
+      if (tbEl && tbEl.style.display === 'flex') { hideSelToolbar(); return; }
       if (e.target && e.target.closest && e.target.closest('#notesPanel')) {
         document.getElementById('notesSearchInput').value = '';
         notesQuery = '';
@@ -1039,6 +1231,12 @@ const NOTES_KEY = 'news-notes-v1';          // 带版本号，便于以后迁移
 const NOTES_PANEL_KEY = 'news-notes-panel';
 const HL_PRUNE_KEEP = 3;                    // 备份键最多保留几个
 
+// 高光颜色：与 CSS 里的 [data-color] 一一对应
+const HL_COLOR_KEY = 'news-hl-color';
+const HL_COLORS = ['yellow', 'green', 'blue', 'pink', 'purple'];
+const COLOR_NAMES = { yellow: '黄色', green: '绿色', blue: '蓝色', pink: '粉色', purple: '紫色' };
+let currentColor = 'yellow';                // 上一次用过的颜色，新笔记默认跟它
+
 let NOTES = [];
 let notesStorageOK = true;
 let notesFilter = 'current';                // 'current' | 'all'
@@ -1049,6 +1247,8 @@ let savedSelectionRange = null;             // 划选时克隆的 Range（点按
 let pendingScrollNoteId = null;             // 跨日期跳转时暂存
 let toolbarShownAt = 0;
 let selectionTimer = null;
+let selHideTimer = null;                    // 手机点按钮时延迟收起用
+let toolbarHoldUntil = 0;
 
 // ---------- 工具 ----------
 function escapeHtml(s) {
@@ -1293,7 +1493,7 @@ function resolveAnchor(anchor, index) {
 // 包裹选区。不能用 Range.surroundContents()——选区跨多个文本节点
 //（比如中间夹着 **加粗**）时它会抛 InvalidStateError。
 // 做法：先把两端对齐到文本节点边界，再按偏移收集"完全落在范围内"的文本节点，逐个包。
-function wrapRange(range, id) {
+function wrapRange(range, id, color) {
   if (!range) return [];
   let sc = range.startContainer, so = range.startOffset;
   let ec = range.endContainer, eo = range.endOffset;
@@ -1328,6 +1528,7 @@ function wrapRange(range, id) {
     const n = targets[i].node;
     const span = document.createElement('span');
     span.className = 'note-hl';
+    span.setAttribute('data-color', color || 'yellow');
     span.setAttribute('data-note-id', id);
     span.addEventListener('click', function (ev) {
       ev.preventDefault();          // 选区落在 <a> 里时必须拦，否则会跳转
@@ -1384,7 +1585,7 @@ function applyNoteHighlights(date) {
       it.note.anchor.start = it.start;
       it.note.anchor.end = it.end;
       it.note.anchor.resolved = true;
-      wrapRange(range, it.note.id);
+      wrapRange(range, it.note.id, it.note.color || 'yellow');
     } else {
       it.note.anchor.resolved = false;
     }
@@ -1412,7 +1613,8 @@ function selectionInArticle() {
 
 function onSelectionChange() {
   const range = selectionInArticle();
-  if (!range) { hideSelToolbar(); return; }
+  // 手机上点工具条按钮的瞬间选区会塌陷，这里不能立刻收起，否则点击会被吞掉
+  if (!range) { hideSelToolbarSoon(); return; }
   savedSelectionRange = range.cloneRange();
   showSelToolbar(range);
 }
@@ -1427,7 +1629,8 @@ function showSelToolbar(range) {
   let r;
   try { r = range.getBoundingClientRect(); } catch (e) { return; }
   if (!r || (r.width === 0 && r.height === 0)) { hideSelToolbar(); return; }
-  tb.style.display = 'block';
+  if (selHideTimer) { clearTimeout(selHideTimer); selHideTimer = null; }
+  tb.style.display = 'flex';
   toolbarShownAt = Date.now();
   const w = tb.offsetWidth || 96;
   const h = tb.offsetHeight || 30;
@@ -1440,9 +1643,23 @@ function showSelToolbar(range) {
 }
 
 function hideSelToolbar() {
+  if (selHideTimer) { clearTimeout(selHideTimer); selHideTimer = null; }
   const tb = document.getElementById('selToolbar');
   if (tb) tb.style.display = 'none';
 }
+
+// 延迟收起：给正在按下工具条的手指留出 click 的时间（触屏上约 300ms）
+function hideSelToolbarSoon() {
+  if (selHideTimer) clearTimeout(selHideTimer);
+  selHideTimer = setTimeout(function () {
+    selHideTimer = null;
+    if (Date.now() < toolbarHoldUntil) { hideSelToolbarSoon(); return; }
+    hideSelToolbar();
+  }, 450);
+}
+
+// 手指按住/点住工具条 → 这段时间内不许自动收起
+function holdSelToolbar() { toolbarHoldUntil = Date.now() + 800; }
 
 // 滚动/缩放时直接隐藏，不做跟随重定位（跟随需要 rAF 循环，抖动且易错）
 function onViewportChange() {
@@ -1454,6 +1671,76 @@ function onToolbarNoteClick() {
   hideSelToolbar();
   if (!savedSelectionRange) return;
   openNoteEditor({ range: savedSelectionRange, existing: null });
+}
+
+// 快速高光：选文字 → 点色块，直接生成/改色，不弹编辑器
+function onToolbarColorClick(color) {
+  const range = savedSelectionRange;
+  hideSelToolbar();
+  if (!range) return;
+  const idx = buildArticleIndex();
+  if (!idx) { toast('当前没有可高亮的正文'); return; }
+  const sel = anchorFromSelectionRange(range, idx);
+  if (!sel) { toast('无法识别所选内容，请重新划选'); return; }
+
+  const date = currentDate || '';
+  const existing = NOTES.find(n => n.date === date && n.anchor && n.anchor.resolved !== false &&
+    n.anchor.start === sel.start && n.anchor.end === sel.end);
+  if (existing) {
+    existing.color = color;
+    existing.updatedAt = Date.now();
+    if (!existing.quote) existing.quote = sel.quote;
+    toast('已改为' + (COLOR_NAMES[color] || color) + '高光');
+  } else {
+    NOTES.push({
+      id: noteId(),
+      date: date,
+      quote: sel.quote,
+      note: '',
+      heading: sel.heading,
+      color: color,
+      createdAt: Date.now(),
+      updatedAt: Date.now(),
+      anchor: sel.anchor
+    });
+    toast('已高亮 · ' + (COLOR_NAMES[color] || color));
+  }
+
+  currentColor = color;
+  try { localStorage.setItem(HL_COLOR_KEY, color); } catch (e) {}
+  saveNotes();
+  applyNoteHighlights(date);
+  // 重渲染后旧 Range 已失效，顺手清掉选区，免得工具条又弹回来
+  try { window.getSelection().removeAllRanges(); } catch (e) {}
+}
+
+// 清除高光：去掉所选范围内的纯高光。已经写了文字的笔记不动，免得连内容一起删掉
+function onToolbarClearClick() {
+  const range = savedSelectionRange;
+  hideSelToolbar();
+  if (!range) return;
+  const idx = buildArticleIndex();
+  if (!idx) { toast('当前没有可清除的正文'); return; }
+  const sel = anchorFromSelectionRange(range, idx);
+  if (!sel) { toast('无法识别所选内容，请重新划选'); return; }
+
+  const date = currentDate || '';
+  const hits = NOTES.filter(n => n.date === date && n.anchor && n.anchor.resolved !== false &&
+    n.anchor.start < sel.end && n.anchor.end > sel.start);
+  if (!hits.length) { toast('这段文字没有高光'); return; }
+
+  const pure = hits.filter(n => !n.note || !n.note.trim());
+  const kept = hits.length - pure.length;
+  if (!pure.length) { toast('这条高光带了笔记，请到右侧笔记面板删除'); return; }
+
+  const ids = pure.map(n => n.id);
+  NOTES = NOTES.filter(n => ids.indexOf(n.id) === -1);
+  if (activeNoteId && ids.indexOf(activeNoteId) !== -1) activeNoteId = null;
+  saveNotes();
+  applyNoteHighlights(date);
+  try { window.getSelection().removeAllRanges(); } catch (e) {}
+  if (kept) toast('已清除高光（另有 ' + kept + ' 条带笔记，未动）');
+  else toast(pure.length > 1 ? '已清除 ' + pure.length + ' 处高光' : '已清除高光');
 }
 
 // ============================================================
@@ -1471,6 +1758,28 @@ function makeAnchorFromQuote(quote, idx, prevAnchor) {
   };
 }
 
+// 把选区换算成「锚点 + 引文 + 所在标题」，快速高光和记笔记共用
+function anchorFromSelectionRange(range, idx) {
+  if (!range || !idx) return null;
+  const s = offsetOfPoint(idx, range.startContainer, range.startOffset);
+  const e = offsetOfPoint(idx, range.endContainer, range.endOffset);
+  if (s == null || e == null || e <= s) return null;
+  const raw = idx.text.slice(s, e);
+  const lead = raw.length - raw.trimStart().length;
+  const quote = raw.trim();
+  if (!quote) return null;
+  const st = s + lead;
+  const anchor = {
+    exact: quote,
+    prefix: idx.text.slice(Math.max(0, st - 40), st),
+    suffix: idx.text.slice(st + quote.length, st + quote.length + 40),
+    occurrence: 0, start: st, end: st + quote.length, resolved: true
+  };
+  const occ = allIndexesOf(idx.text, quote);
+  for (let i = 0; i < occ.length; i++) { if (occ[i] === st) { anchor.occurrence = i; break; } }
+  return { anchor: anchor, quote: quote, heading: idx.headingAt(st), start: st, end: st + quote.length };
+}
+
 function openNoteEditor(opts) {
   const existing = opts.existing || null;
   const range = opts.range || null;
@@ -1482,22 +1791,11 @@ function openNoteEditor(opts) {
     heading = existing.heading || '';
     anchor = JSON.parse(JSON.stringify(existing.anchor || { exact: existing.quote }));
   } else if (range && idx) {
-    const s = offsetOfPoint(idx, range.startContainer, range.startOffset);
-    const e = offsetOfPoint(idx, range.endContainer, range.endOffset);
-    if (s == null || e == null || e <= s) { toast('无法识别所选内容，请重新划选'); return; }
-    const raw = idx.text.slice(s, e);
-    const lead = raw.length - raw.trimStart().length;
-    quote = raw.trim();
-    const st = s + lead;                       // 修剪掉首部空白后的起点
-    heading = idx.headingAt(st);
-    anchor = {
-      exact: quote,
-      prefix: idx.text.slice(Math.max(0, st - 40), st),
-      suffix: idx.text.slice(st + quote.length, st + quote.length + 40),
-      occurrence: 0, start: st, end: st + quote.length, resolved: true
-    };
-    const occ = allIndexesOf(idx.text, quote);
-    for (let i = 0; i < occ.length; i++) { if (occ[i] === st) { anchor.occurrence = i; break; } }
+    const sel = anchorFromSelectionRange(range, idx);
+    if (!sel) { toast('无法识别所选内容，请重新划选'); return; }
+    quote = sel.quote;
+    heading = sel.heading;
+    anchor = sel.anchor;
   } else if (range) {
     quote = range.toString().trim();
   }
@@ -1508,6 +1806,7 @@ function openNoteEditor(opts) {
     date: existing ? existing.date : (currentDate || ''),
     heading: heading,
     anchor: anchor,
+    color: existing ? (existing.color || 'yellow') : currentColor,
     createdAt: existing ? existing.createdAt : Date.now()
   };
 
@@ -1517,6 +1816,7 @@ function openNoteEditor(opts) {
   document.getElementById('noteQuoteInput').value = quote;
   document.getElementById('noteTextInput').value = existing ? (existing.note || '') : '';
   document.getElementById('noteDeleteBtn').style.display = existing ? '' : 'none';
+  updateEditorColorUI();
   const ed = document.getElementById('noteEditor');
   ed.style.display = 'block';
   positionEditor(rect);
@@ -1542,6 +1842,20 @@ function positionEditor(rect) {
   left = Math.max(12, Math.min(window.innerWidth - w - 12, left));
   ed.style.left = left + 'px';
   ed.style.top = top + 'px';
+}
+
+function setEditorColor(color) {
+  if (!editorState) return;
+  editorState.color = color;
+  updateEditorColorUI();
+}
+function updateEditorColorUI() {
+  const row = document.getElementById('noteColorRow');
+  if (!row) return;
+  const cur = (editorState && editorState.color) || 'yellow';
+  row.querySelectorAll('.sel-color').forEach(function (b) {
+    b.classList.toggle('active', b.getAttribute('data-color') === cur);
+  });
 }
 
 function validateEditorAnchor() {
@@ -1583,20 +1897,10 @@ function reanchorFromSelection() {
   const range = selectionInArticle();
   if (!range) { toast('请先在正文里划选一段文字'); return; }
   const idx = buildArticleIndex();
-  const s = offsetOfPoint(idx, range.startContainer, range.startOffset);
-  const e = offsetOfPoint(idx, range.endContainer, range.endOffset);
-  if (s == null || e == null || e <= s) { toast('无法识别所选内容'); return; }
-  const raw = idx.text.slice(s, e);
-  const lead = raw.length - raw.trimStart().length;
-  const quote = raw.trim();
-  const st = s + lead;
-  document.getElementById('noteQuoteInput').value = quote;
-  editorState.anchor = {
-    exact: quote,
-    prefix: idx.text.slice(Math.max(0, st - 40), st),
-    suffix: idx.text.slice(st + quote.length, st + quote.length + 40),
-    occurrence: 0, start: st, end: st + quote.length, resolved: true
-  };
+  const sel = anchorFromSelectionRange(range, idx);
+  if (!sel) { toast('无法识别所选内容'); return; }
+  document.getElementById('noteQuoteInput').value = sel.quote;
+  editorState.anchor = sel.anchor;
   validateEditorAnchor();
   toast('已用新选区重新锚定');
 }
@@ -1626,6 +1930,7 @@ function saveNoteFromEditor() {
     const n = NOTES.find(x => x.id === editorState.noteId);
     if (n) {
       n.quote = quote; n.note = body; n.anchor = anchor; n.heading = heading;
+      n.color = editorState.color || n.color || 'yellow';
       n.updatedAt = Date.now();
     }
   } else {
@@ -1646,6 +1951,7 @@ function saveNoteFromEditor() {
       quote: quote,
       note: body,
       heading: heading,
+      color: editorState.color || 'yellow',
       createdAt: editorState.createdAt,
       updatedAt: Date.now(),
       anchor: anchor
@@ -1677,12 +1983,14 @@ function deleteNoteFromEditor() {
 function noteItemHtml(n) {
   const orphan = n.anchor && n.anchor.resolved === false;
   const missing = !(window.NEWS_DATA && window.NEWS_DATA.reports[n.date]);
+  const color = HL_COLORS.indexOf(n.color) !== -1 ? n.color : 'yellow';
   const ts = n.updatedAt || n.createdAt;
   const time = ts ? new Date(ts).toLocaleString('zh-CN', { month: '2-digit', day: '2-digit', hour: '2-digit', minute: '2-digit' }) : '';
-  return '<div class="note-item' + (n.id === activeNoteId ? ' active' : '') + '" data-note-id="' + escapeHtml(n.id) + '">' +
+  return '<div class="note-item' + (n.id === activeNoteId ? ' active' : '') + '" data-note-id="' + escapeHtml(n.id) + '" data-color="' + color + '">' +
     '<div class="note-quote">' + escapeHtml(n.quote) + '</div>' +
     (n.note ? '<div class="note-body">' + escapeHtml(n.note) + '</div>' : '') +
     '<div class="note-meta">' +
+      '<span class="note-swatch" title="' + (COLOR_NAMES[color] || '') + '"></span>' +
       (n.heading ? '<span class="note-badge">' + escapeHtml(n.heading) + '</span>' : '') +
       (orphan ? '<span class="note-badge orphan">⚠️ 位置已失效</span>' : '') +
       (missing ? '<span class="note-badge orphan">📄 原日报缺失</span>' : '') +
@@ -1859,6 +2167,7 @@ function exportNotesMD() {
       if (n.heading) out += '### ' + n.heading + '\n\n';
       out += '> ' + String(n.quote || '').replace(/\n/g, ' ') + '\n\n';
       if (n.note) out += n.note + '\n\n';
+      else out += '*（高光 · ' + (COLOR_NAMES[n.color] || '黄色') + '）*\n\n';
       out += '*— ' + new Date(n.createdAt || Date.now()).toLocaleString('zh-CN') + '*\n\n';
     });
   });
@@ -1925,6 +2234,10 @@ function onImportFile(input) {
 function initNotes() {
   notesStorageOK = probeStorage();
   NOTES = loadNotes();
+  try {
+    const c = localStorage.getItem(HL_COLOR_KEY);
+    if (c && HL_COLORS.indexOf(c) !== -1) currentColor = c;
+  } catch (e) {}
 
   let ps = null;
   try { ps = localStorage.getItem(NOTES_PANEL_KEY); } catch (e) {}
