@@ -1661,9 +1661,19 @@ function hideSelToolbarSoon() {
 // 手指按住/点住工具条 → 这段时间内不许自动收起
 function holdSelToolbar() { toolbarHoldUntil = Date.now() + 800; }
 
-// 滚动/缩放时直接隐藏，不做跟随重定位（跟随需要 rAF 循环，抖动且易错）
+// 滚动/缩放时让工具条跟着选区走。
+// 早先是「一滚就收」，结果页面自己补发的 scroll（惯性滚动、滚动位置恢复）
+// 会在弹出后一两秒把工具条收掉，看起来像闪一下就不见了。
 function onViewportChange() {
+  const tb = document.getElementById('selToolbar');
+  if (!tb || tb.style.display === 'none') return;
   if (Date.now() - toolbarShownAt < 250) return;   // 忽略刚弹出时的抖动
+  if (savedSelectionRange) {
+    try {
+      const r = savedSelectionRange.getBoundingClientRect();
+      if (r && (r.width || r.height)) { showSelToolbar(savedSelectionRange); return; }
+    } catch (e) {}
+  }
   hideSelToolbar();
 }
 
