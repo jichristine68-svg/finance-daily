@@ -166,11 +166,11 @@ try {
 
     # 5) Fallback: ensure data.js is rebuilt regardless.
     if (Test-Path $report) {
-        # Length telemetry. The template caps a report at 7,500 characters; log the
+        # Length telemetry. The template caps a report at 10,500 characters; log the
         # actual size so an over-budget day shows up here without opening the file.
         try {
             $len = (Get-Content -Path $report -Raw -Encoding UTF8).Length
-            Log "report length: $len chars (budget 6500-7500)."
+            Log "report length: $len chars (budget 8800-10500)."
         } catch {
             Log "WARN: could not measure report length: $($_.Exception.Message)"
         }
